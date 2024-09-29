@@ -1,0 +1,17 @@
+usage: cli <command> [<args>]
+
+- Note: each playlist is treated as a single branch.
+
+Available commands: 
+
+help                    Prints this menu.
+
+playlist                See all active playlists & current branch.
+--switch <branch>       Changes current branch to a different playlist.
+--rm <branch>           Removes specified playlist. 
+
+channel                 List all tracked channels for current branch.
+--keys                  List keywords per channel used to scrape videos. 
+--primary <channel>     Edit primary keywords for <channel_name>.        
+--sub                   Edit sub keywords for <channel_name>.
+
