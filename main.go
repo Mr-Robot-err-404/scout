@@ -34,9 +34,9 @@ func main() {
 
 	create_cmd := flag.NewFlagSet("create_cmd", flag.ExitOnError)
 	playlist_name := create_cmd.String("create", "", "create")
-	populate := create_cmd.Bool("populate", false, "populate")
+	delete_flag := create_cmd.String("delete", "", "delete")
 
-	// TODO: ask a second prompt if first condition is valid
+	// TODO: ranking the search results
 
 	switch os.Args[1] {
 	case "add":
@@ -49,8 +49,8 @@ func main() {
 			log.Println("Channel is already tracked ;)")
 			os.Exit(0)
 		}
-		key := os.Getenv("SEARCH_KEY_1")
-		item, err := getChannelID(tag, key)
+		key := os.Getenv("API_KEY")
+		item, err := get_channel_ID(tag, key)
 
 		if err != nil {
 			log.Fatal(err)
@@ -69,8 +69,7 @@ func main() {
 		}
 		deleteRow(db, tag)
 	case "scan":
-		q := get_search_terms()
-		fmt.Println(q)
+		search_remote_channels(db, []string{})
 
 	case "playlist":
 		if len(os.Args) == 2 {
@@ -78,19 +77,24 @@ func main() {
 			fmt.Println(playlists)
 			return
 		}
-		insert_key, access_token := os.Getenv("PLAYLIST_KEY_1"), os.Getenv("ACCESS_TOKEN")
+		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		create_cmd.Parse(os.Args[2:])
 
-		if *populate {
-			scrape_channels(db)
+		if len(*delete_flag) != 0 {
+			err := deletePlaylist(db, *delete_flag)
+			if err != nil {
+				os.Exit(1)
+			}
 			os.Exit(0)
 		}
 
 		if len(*playlist_name) == 0 {
 			log.Fatal("playlist name not provided")
 		}
+		terms := get_user_search_terms()
+		q := csv_string(terms)
 
-		item := create_playlist(db, *playlist_name, insert_key, access_token)
+		item := create_playlist(db, *playlist_name, q, api_key, access_token)
 		fmt.Printf("created playlist: %v", item)
 
 	case "create_table":

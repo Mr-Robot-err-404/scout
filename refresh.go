@@ -46,7 +46,7 @@ func refresh_quota(db *sql.DB) {
 	}
 	if resp.StatusCode != 200 {
 		fmt.Println(resp.StatusCode)
-		log.Fatal(err)
+		os.Exit(1)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)

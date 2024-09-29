@@ -1,0 +1,176 @@
+{
+  "kind": "youtube#searchListResponse",
+  "etag": "0zagWYSnK5QVZ-HVsOMIyilFw5g",
+  "nextPageToken": "CAUQAA",
+  "regionCode": "GB",
+  "pageInfo": {
+    "totalResults": 156,
+    "resultsPerPage": 5
+  },
+  "items": [
+    {
+      "kind": "youtube#searchResult",
+      "etag": "heKDWaKHDjGebvkXgKZ0kCWkPn8",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "rMNFLg1gLoI"
+      },
+      "snippet": {
+        "publishedAt": "2023-02-08T04:15:07Z",
+        "channelId": "UCHP9CdeguNUI-_nBv_UXBhw",
+        "title": "Avoid This Opening Trap!! | Sicilian, Accelerated Dragon | GM Naroditsky’s Top Theory Speedrun",
+        "description": "00:00 Intro 00:20 First Move 00:25 Game 14:35 Analysis Daniel now has a Patreon! Check it out at ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/rMNFLg1gLoI/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/rMNFLg1gLoI/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/rMNFLg1gLoI/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Daniel Naroditsky",
+        "liveBroadcastContent": "none",
+        "publishTime": "2023-02-08T04:15:07Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "iMhMhNWQf9e2t3gCuRZDVN4sc6o",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "UXKY-hKJs6Q"
+      },
+      "snippet": {
+        "publishedAt": "2024-07-26T20:00:06Z",
+        "channelId": "UCHP9CdeguNUI-_nBv_UXBhw",
+        "title": "Chess Opening Traps | Philidor, King&#39;s Indian, London, Caro-Kann | GM Naroditsky&#39;s DYI Speedrun",
+        "description": "00:00 Intro 00:11 Game 1 Philidor 07:25 Analysis 1 14:10 Game 2 King's Indian 17:44 Analysis 2 20:25 Example 20:56 Back to ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/UXKY-hKJs6Q/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/UXKY-hKJs6Q/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/UXKY-hKJs6Q/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Daniel Naroditsky",
+        "liveBroadcastContent": "none",
+        "publishTime": "2024-07-26T20:00:06Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "R-5y16cPPRAk1pHKefvQvPvs1iQ",
+      "id": {
+        "kind": "youtube#channel",
+        "channelId": "UCHP9CdeguNUI-_nBv_UXBhw"
+      },
+      "snippet": {
+        "publishedAt": "2019-07-24T21:07:25Z",
+        "channelId": "UCHP9CdeguNUI-_nBv_UXBhw",
+        "title": "Daniel Naroditsky",
+        "description": "I am a Grandmaster and recent Stanford University grad. Bay Area born and raised, but I live in Charlotte, NC since December ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://yt3.ggpht.com/ytc/AIdro_kx591p6O8D62J7xHw7gwZNA5lclztMJciQvcdacWlisQ=s88-c-k-c0xffffffff-no-rj-mo"
+          },
+          "medium": {
+            "url": "https://yt3.ggpht.com/ytc/AIdro_kx591p6O8D62J7xHw7gwZNA5lclztMJciQvcdacWlisQ=s240-c-k-c0xffffffff-no-rj-mo"
+          },
+          "high": {
+            "url": "https://yt3.ggpht.com/ytc/AIdro_kx591p6O8D62J7xHw7gwZNA5lclztMJciQvcdacWlisQ=s800-c-k-c0xffffffff-no-rj-mo"
+          }
+        },
+        "channelTitle": "Daniel Naroditsky",
+        "liveBroadcastContent": "none",
+        "publishTime": "2019-07-24T21:07:25Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "SH4xrQrc8kDnVnpB80VIYYbmfa4",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "vrZ3WwAXBsQ"
+      },
+      "snippet": {
+        "publishedAt": "2023-03-04T05:18:33Z",
+        "channelId": "UCHP9CdeguNUI-_nBv_UXBhw",
+        "title": "Ending the Englund Gambit | Busting Unsound Openings with GM Naroditsky",
+        "description": "In this video, we carefully examine a gambit that has plagued 1.d4 players for years: the Englund Gambit. In the Englund, Black ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/vrZ3WwAXBsQ/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/vrZ3WwAXBsQ/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/vrZ3WwAXBsQ/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Daniel Naroditsky",
+        "liveBroadcastContent": "none",
+        "publishTime": "2023-03-04T05:18:33Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "9J1uM84e2hkt54Tb1RoQVgg0Q9g",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "YzI6qI-33_U"
+      },
+      "snippet": {
+        "publishedAt": "2023-03-06T04:51:06Z",
+        "channelId": "UCHP9CdeguNUI-_nBv_UXBhw",
+        "title": "Understanding the Accelerated Dragon!! | Open Sicilian | GM Naroditsky&#39;s Theory Speed Run",
+        "description": "00:00 Grünfeld is Busted?!? 02:55 intro 03:03 First Move 03:10 Game 24:11 Analysis 39:23 Example Game 41:52 Back to the ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/YzI6qI-33_U/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/YzI6qI-33_U/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/YzI6qI-33_U/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Daniel Naroditsky",
+        "liveBroadcastContent": "none",
+        "publishTime": "2023-03-06T04:51:06Z"
+      }
+    }
+  ]
+}

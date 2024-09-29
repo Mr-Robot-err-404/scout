@@ -1,0 +1,182 @@
+{
+  "kind": "youtube#searchListResponse",
+  "etag": "j-2dbHHMwiV-aAAjzi3vKns8f00",
+  "nextPageToken": "CAUQAA",
+  "regionCode": "GB",
+  "pageInfo": {
+    "totalResults": 38232,
+    "resultsPerPage": 5
+  },
+  "items": [
+    {
+      "kind": "youtube#searchResult",
+      "etag": "Y9eUuXOKldv2OZMRJAh_sIM9Lts",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "XkB4IVNaZWw"
+      },
+      "snippet": {
+        "publishedAt": "2021-04-14T10:00:15Z",
+        "channelId": "UCXy10-NEFGxQ3b4NVrzHw1Q",
+        "title": "A Beginner Lesson in the Stafford Gambit",
+        "description": "Watch on Twitch: https://www.twitch.tv/imrosen -- Follow to get notified when I go live! In this video, I give a chess lesson in the ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/XkB4IVNaZWw/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/XkB4IVNaZWw/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/XkB4IVNaZWw/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Eric Rosen",
+        "liveBroadcastContent": "none",
+        "publishTime": "2021-04-14T10:00:15Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "J9_7nVUWGQR0Eo0P0ztI1pVza90",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "zsc7rDteis4"
+      },
+      "snippet": {
+        "publishedAt": "2021-10-12T22:30:10Z",
+        "channelId": "UCXy10-NEFGxQ3b4NVrzHw1Q",
+        "title": "How to CRUSH the Stafford Gambit (and other chess opening secrets)",
+        "description": "In this video, I shared a bunch of chess opening secrets with @akaNemsko, including a strong and simple \"refutation\" to my ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/zsc7rDteis4/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/zsc7rDteis4/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/zsc7rDteis4/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Eric Rosen",
+        "liveBroadcastContent": "none",
+        "publishTime": "2021-10-12T22:30:10Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "mke0KOSKOrZFln_nStKE7VkSiME",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "FkFYkrAwNjw"
+      },
+      "snippet": {
+        "publishedAt": "2023-12-23T16:45:00Z",
+        "channelId": "UCXy10-NEFGxQ3b4NVrzHw1Q",
+        "title": "How to Beat the Stafford Gambit | Speedrun Episode 14",
+        "description": "Beginner to Master Speedrun Playlist: ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/FkFYkrAwNjw/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/FkFYkrAwNjw/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/FkFYkrAwNjw/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Eric Rosen",
+        "liveBroadcastContent": "none",
+        "publishTime": "2023-12-23T16:45:00Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "CRr-JygQbmV-HIQv6r6cnMG1pTE",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "HmM4MGjvh7U"
+      },
+      "snippet": {
+        "publishedAt": "2022-01-18T20:00:11Z",
+        "channelId": "UCXy10-NEFGxQ3b4NVrzHw1Q",
+        "title": "How to Play the Stafford Gambit Declined - Dubai Rapid Chess Round 8",
+        "description": "In this video, I share my round 7 game from the Dubai Chess Club Rapid Tournament. The game featured an instructive battle ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/HmM4MGjvh7U/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/HmM4MGjvh7U/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/HmM4MGjvh7U/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Eric Rosen",
+        "liveBroadcastContent": "none",
+        "publishTime": "2022-01-18T20:00:11Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "Sx4In-qXE3dFFHRQr8yPV08B9Uc",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "eIecRRl1cfc"
+      },
+      "snippet": {
+        "publishedAt": "2022-07-28T19:30:08Z",
+        "channelId": "UCXy10-NEFGxQ3b4NVrzHw1Q",
+        "title": "Top 10 BEST Stafford Gambit Traps",
+        "description": "In this video, I do a speedrun chess lesson of the best Stafford Gambit opening traps. Watch live at https://www.twitch.tv/imrosen ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/eIecRRl1cfc/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/eIecRRl1cfc/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/eIecRRl1cfc/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Eric Rosen",
+        "liveBroadcastContent": "none",
+        "publishTime": "2022-07-28T19:30:08Z"
+      }
+    }
+  ]
+}

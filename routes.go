@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Snippet struct {
@@ -31,11 +32,33 @@ type PlaylistSnippet struct {
 	} `json:"snippet"`
 }
 
+type SearchSnippet struct {
+	ChannelId    string
+	Title        string
+	Description  string
+	ChannelTitle string
+}
+
+type SearchItem struct {
+	Id      struct{ VideoId string }
+	Snippet SearchSnippet
+}
+
+type SearchResp struct {
+	Items    []SearchItem
+	PageInfo PageInfo
+}
+
+type PageInfo struct {
+	TotalResults   int
+	ResultsPerPage int
+}
+
 func create_remote_playlist(playlist_name string, key string, access_token string) PlaylistResp {
 	var snippet PlaylistSnippet
 	snippet.Snippet.Title = playlist_name
 
-	route := "https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&key=" + key
+	route := "https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&videoDuration=long&key=" + key
 	json_body, err := json.Marshal(&snippet)
 	if err != nil {
 		log.Fatal(err)
@@ -72,7 +95,34 @@ func create_remote_playlist(playlist_name string, key string, access_token strin
 	return item
 }
 
-func getChannelID(tag string, key string) ([]string, error) {
+func search_and_destroy(q string, channel_id string) (SearchResp, error) {
+	var res SearchResp
+
+	api_key := os.Getenv("API_KEY")
+	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&channelId=" + channel_id + "&order=relevance&q=how%20to%20stafford&key=" + api_key
+	resp, err := http.Get(route)
+
+	if err != nil {
+		return res, err
+	}
+	if resp.StatusCode != 200 {
+		return res, fmt.Errorf("request failed with status code %v", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return res, err
+	}
+	err = json.Unmarshal(body, &res)
+
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+func get_channel_ID(tag string, key string) ([]string, error) {
 	term := tag
 	if string(term[0]) == "@" {
 		term = term[1:]
