@@ -36,7 +36,7 @@ func main() {
 	playlist_name := create_cmd.String("create", "", "create")
 	delete_flag := create_cmd.String("delete", "", "delete")
 
-	// TODO: ranking the search results
+	// TODO: insert a video into an existing playlist
 
 	switch os.Args[1] {
 	case "add":
@@ -68,8 +68,10 @@ func main() {
 			os.Exit(0)
 		}
 		deleteRow(db, tag)
-	case "scan":
-		search_remote_channels(db, []string{})
+	case "cli":
+		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+		res := insert_playlist_item("PL-vGMW-bu9eXQ3mWWHRY5hJ6xLVhhgRFh", "tO7CCP7liwI", api_key, access_token)
+		fmt.Printf("added playlist item: %v", res.Snippet.Title)
 
 	case "playlist":
 		if len(os.Args) == 2 {
@@ -98,7 +100,7 @@ func main() {
 		fmt.Printf("created playlist: %v", item)
 
 	case "create_table":
-		createTable(db, "./sql/create_playlist_table.sql")
+		createTable(db, "./sql/create_video_table.sql")
 	case "delete_table":
 		deleteTable(db, "./sql/delete_playlist_table.sql")
 	case "refresh":

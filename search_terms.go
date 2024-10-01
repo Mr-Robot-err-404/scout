@@ -30,7 +30,7 @@ func get_user_search_terms() []string {
 	return q
 }
 func search_remote_channels(db *sql.DB, q []string) {
-	res, err := search_and_destroy("", "UCXy10-NEFGxQ3b4NVrzHw1Q")
+	res, err := search_remote_channel("", "UCXy10-NEFGxQ3b4NVrzHw1Q")
 	if err != nil {
 		log.Fatal(err)
 	}
