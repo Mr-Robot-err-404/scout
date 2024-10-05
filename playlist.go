@@ -12,34 +12,74 @@ type Playlist struct {
 	playlist_id      string
 	name             string
 	q                string
+	filter           string
 	inclusive_search bool
 	long_format      string
 }
 
-func create_playlist(db *sql.DB, name string, q string, key string, access_token string) PlaylistResp {
+func create_playlist(db *sql.DB, name string, q string, filter string, key string, access_token string) PlaylistResp {
 	_, exists := find_row(db, name, "./sql/filter_playlist.sql")
 	if exists {
 		fmt.Println("playlist already exists")
 		os.Exit(0)
 	}
 	item := create_remote_playlist(name, key, access_token)
-	fmt.Println("playlist created!", item.Id, item.Snippet.Title)
+	fmt.Println("created playlist")
 
-	createPlaylistRow(db, item.Id, item.Snippet.Title, q, true, true)
+	create_playlist_row(db, item.Id, item.Snippet.Title, q, filter, true, true)
 	return item
 }
 
-func createPlaylistRow(db *sql.DB, playlist_id string, name string, q string, inclusive bool, long bool) {
-	insertQuery := readSQLFile("./sql/create_playlist.sql")
-	_, err := db.Exec(insertQuery, playlist_id, name, q, inclusive, long)
+func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id string) {
+	search_items := [][]SearchItem{}
+	channels := readChannels(db)
+	query := convert_and_parse(q)
 
+	fmt.Println("searching channels...")
+
+	for i := range channels {
+		curr := channels[i]
+		resp, err := search_remote_channel(query, curr.channel_id)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		search_items = append(search_items, resp.Items)
+	}
+	playlist_items := rank_channels(search_items, filter)
+
+	if len(playlist_items) == 0 {
+		fmt.Println("no items found")
+		os.Exit(0)
+	}
+	api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+	fmt.Println("inserting items into playlist...")
+
+	c := 0
+	for i := range playlist_items {
+		video_id := playlist_items[i].Id.VideoId
+		if len(video_id) == 0 {
+			continue
+		}
+		_, err := insert_playlist_item(playlist_id, video_id, api_key, access_token)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		c++
+	}
+	fmt.Printf("added %v items to playlist\n", c)
+}
+
+func create_playlist_row(db *sql.DB, playlist_id string, name string, q string, filter string, inclusive bool, long bool) {
+	insertQuery := readSQLFile("./sql/create_playlist.sql")
+	_, err := db.Exec(insertQuery, playlist_id, name, q, filter, inclusive, long)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("created playlist row")
 }
 
-func deletePlaylist(db *sql.DB, name string) error {
+func delete_playlist(db *sql.DB, name string) error {
 	query := readSQLFile("./sql/delete_playlist_row.sql")
 	_, err := db.Exec(query, name)
 	if err != nil {
@@ -61,7 +101,7 @@ func read_playlists(db *sql.DB) []Playlist {
 	defer rows.Close()
 	for rows.Next() {
 		var playlist Playlist
-		err = rows.Scan(&playlist.id, &playlist.playlist_id, &playlist.name, &playlist.q, &playlist.inclusive_search, &playlist.long_format)
+		err = rows.Scan(&playlist.id, &playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.inclusive_search, &playlist.long_format)
 		if err != nil {
 			log.Fatal(err)
 		}

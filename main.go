@@ -17,15 +17,15 @@ type Message struct {
 }
 
 func main() {
-	help_txt, err := os.ReadFile("./help.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
 	if len(os.Args) < 2 || os.Args[1] == "help" {
+		help_txt, err := os.ReadFile("./help.txt")
+		if err != nil {
+			log.Fatal(err)
+		}
 		fmt.Print(string(help_txt))
 		return
 	}
-	err = godotenv.Load(".env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +36,7 @@ func main() {
 	playlist_name := create_cmd.String("create", "", "create")
 	delete_flag := create_cmd.String("delete", "", "delete")
 
-	// TODO: insert a video into an existing playlist
+	// TODO: add the Charm library for all CLI functions
 
 	switch os.Args[1] {
 	case "add":
@@ -69,9 +69,6 @@ func main() {
 		}
 		deleteRow(db, tag)
 	case "cli":
-		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
-		res := insert_playlist_item("PL-vGMW-bu9eXQ3mWWHRY5hJ6xLVhhgRFh", "tO7CCP7liwI", api_key, access_token)
-		fmt.Printf("added playlist item: %v", res.Snippet.Title)
 
 	case "playlist":
 		if len(os.Args) == 2 {
@@ -83,24 +80,26 @@ func main() {
 		create_cmd.Parse(os.Args[2:])
 
 		if len(*delete_flag) != 0 {
-			err := deletePlaylist(db, *delete_flag)
+			err := delete_playlist(db, *delete_flag)
 			if err != nil {
 				os.Exit(1)
 			}
 			os.Exit(0)
 		}
-
 		if len(*playlist_name) == 0 {
 			log.Fatal("playlist name not provided")
 		}
-		terms := get_user_search_terms()
-		q := csv_string(terms)
+		query := get_user_input("Enter search terms: ")
+		filter := get_user_input("Filter: ")
 
-		item := create_playlist(db, *playlist_name, q, api_key, access_token)
-		fmt.Printf("created playlist: %v", item)
+		q := csv_string(query)
+		f := csv_string(filter)
+
+		playlist_resp := create_playlist(db, *playlist_name, q, f, api_key, access_token)
+		populate_playlist(db, query, filter, playlist_resp.Id)
 
 	case "create_table":
-		createTable(db, "./sql/create_video_table.sql")
+		createTable(db, "./sql/create_playlist_table.sql")
 	case "delete_table":
 		deleteTable(db, "./sql/delete_playlist_table.sql")
 	case "refresh":

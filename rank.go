@@ -2,29 +2,22 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"strings"
 )
 
-func rank_channels() {
-	q := "caro kann,gambit"
-	sample := read_sample("./samples/naroditsky.json")
-	sample2 := read_sample("./samples/rosen.json")
-	naroditsky_videos, rosen_videos := sample.Items, sample2.Items
-	naroditsky_playlists, rosen_playlists := []SearchItem{}, []SearchItem{}
+func rank_channels(lists [][]SearchItem, q []string) []SearchItem {
+	filtered_lists := [][]SearchItem{}
 
-	filter_list(&naroditsky_videos, &naroditsky_playlists, q)
-	filter_list(&rosen_videos, &rosen_playlists, q)
-
-	lists := [][]SearchItem{naroditsky_videos, rosen_videos}
-	max := max_len(lists)
-	items := fill_playlist(lists, max, 5)
-
-	for _, s := range items {
-		fmt.Println(s.Snippet.ChannelTitle)
+	for i := range lists {
+		items := lists[i]
+		filter_list(&items, q)
+		filtered_lists = append(filtered_lists, items)
 	}
+	max := max_len(filtered_lists)
+	items := fill_playlist(filtered_lists, max, 5)
+	return items
 }
 
 func fill_playlist(lists [][]SearchItem, max int, capacity int) []SearchItem {
@@ -45,34 +38,27 @@ func fill_playlist(lists [][]SearchItem, max int, capacity int) []SearchItem {
 	return playlist_items
 }
 
-func filter_list(videos *[]SearchItem, playlists *[]SearchItem, q string) {
+func filter_list(videos *[]SearchItem, q []string) {
 	items := *videos
 	video_items := []SearchItem{}
-	playlist_items := []SearchItem{}
 
 	for i := range items {
 		curr := items[i]
 		title, desc := curr.Snippet.Title, curr.Snippet.Description
+		valid := 0
 
-		if curr.Id.Kind == "youtube#playlist" {
-			playlist_items = append(playlist_items, curr)
-			continue
-		}
-		if curr.Id.Kind != "youtube#video" {
-			continue
-		}
 		if len(title) == 0 || len(desc) == 0 {
 			continue
 		}
-
-		valid := matching_terms(q, strings.ToLower(title), strings.ToLower(desc))
+		for _, s := range q {
+			valid += matching_terms(s, strings.ToLower(title), strings.ToLower(desc))
+		}
 		if valid == 0 {
 			continue
 		}
 		video_items = append(video_items, curr)
 	}
 	*videos = video_items
-	*playlists = playlist_items
 }
 
 func matching_terms(q string, title string, desc string) int {

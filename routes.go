@@ -87,7 +87,6 @@ func create_remote_playlist(playlist_name string, key string, access_token strin
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(json_body))
 	body_reader := bytes.NewReader(json_body)
 
 	req, err := http.NewRequest(http.MethodPost, route, body_reader)
@@ -121,9 +120,9 @@ func create_remote_playlist(playlist_name string, key string, access_token strin
 
 func search_remote_channel(q string, channel_id string) (SearchResp, error) {
 	var res SearchResp
-
 	api_key := os.Getenv("API_KEY")
-	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&channelId=" + channel_id + "&type=video&q=how%20to%20stafford&key=" + api_key
+
+	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&channelId=" + channel_id + "&type=video&q=" + q + "&key=" + api_key
 	resp, err := http.Get(route)
 
 	if err != nil {
@@ -146,7 +145,7 @@ func search_remote_channel(q string, channel_id string) (SearchResp, error) {
 	return res, nil
 }
 
-func insert_playlist_item(playlist_id string, video_id string, key string, access_token string) PlaylistInsertResp {
+func insert_playlist_item(playlist_id string, video_id string, key string, access_token string) (PlaylistInsertResp, error) {
 	var item PlaylistItem
 	item.Snippet.PlaylistID = playlist_id
 	item.Snippet.ResourceID.VideoID = video_id
@@ -156,37 +155,37 @@ func insert_playlist_item(playlist_id string, video_id string, key string, acces
 
 	json_body, err := json.Marshal(&item)
 	if err != nil {
-		log.Fatal(err)
+		return PlaylistInsertResp{}, err
 	}
 	body_reader := bytes.NewReader(json_body)
 
 	req, err := http.NewRequest(http.MethodPost, route, body_reader)
 	if err != nil {
-		log.Fatal(err)
+		return PlaylistInsertResp{}, err
 	}
 	req.Header.Set("Authorization", "Bearer "+access_token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return PlaylistInsertResp{}, err
 	}
 	if resp.StatusCode != 200 {
 		err = fmt.Errorf("failed request with status: %v", resp.StatusCode)
-		log.Fatal(err)
+		return PlaylistInsertResp{}, err
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return PlaylistInsertResp{}, err
 	}
 	var res PlaylistInsertResp
 	err = json.Unmarshal(body, &res)
 
 	if err != nil {
-		log.Fatal(err)
+		return PlaylistInsertResp{}, err
 	}
-	return res
+	return res, nil
 }
 
 func get_channel_ID(tag string, key string) ([]string, error) {
@@ -194,7 +193,8 @@ func get_channel_ID(tag string, key string) ([]string, error) {
 	if string(term[0]) == "@" {
 		term = term[1:]
 	}
-	route := "https://youtube.googleapis.com/youtube/v3/channels?part=snippet&forHandle=%40" + term + "&key=" + key
+	q := parse_query(term)
+	route := "https://youtube.googleapis.com/youtube/v3/channels?part=snippet&forHandle=%40" + q + "&key=" + key
 	resp, err := http.Get(route)
 
 	if err != nil {
