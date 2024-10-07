@@ -32,52 +32,59 @@ func main() {
 	db := setup_db()
 	defer db.Close()
 
-	create_cmd := flag.NewFlagSet("create_cmd", flag.ExitOnError)
-	playlist_name := create_cmd.String("create", "", "create")
-	delete_flag := create_cmd.String("delete", "", "delete")
+	cmd := flag.NewFlagSet("create_cmd", flag.ExitOnError)
+	create_flag := cmd.String("create", "", "create")
+	delete_flag := cmd.String("delete", "", "delete")
 
 	// TODO: add the Charm library for all CLI functions
 
 	switch os.Args[1] {
-	case "add":
-		if len(os.Args) != 3 {
-			log.Fatal("no channel tag provided")
+	case "cli":
+		// print_table()
+
+	case "channel":
+		if len(os.Args) == 2 {
+			channels := readChannels(db)
+			headers, display_rows := get_channel_display(channels)
+			print_table(headers, display_rows)
+			return
 		}
-		tag := os.Args[2]
-		_, exists := find_row(db, tag, "./sql/read_row.sql")
+		cmd.Parse(os.Args[2:])
+		if len(*delete_flag) != 0 {
+			tag, exists := find_row(db, *delete_flag, "./sql/read_row.sql")
+			if !exists {
+				log.Println("no channel found with that tag")
+			} else {
+				deleteRow(db, tag)
+			}
+			return
+		}
+		if len(*create_flag) == 0 {
+			fmt.Println("no channel tag provided")
+			os.Exit(1)
+		}
+		_, exists := find_row(db, *create_flag, "./sql/read_row.sql")
 		if exists {
 			log.Println("Channel is already tracked ;)")
-			os.Exit(0)
+			return
 		}
 		key := os.Getenv("API_KEY")
-		item, err := get_channel_ID(tag, key)
+		item, err := get_channel_ID(*create_flag, key)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 		id, title, real_tag := item[0], item[1], item[2]
 		createChannelRow(db, id, real_tag, title)
-	case "remove":
-		if len(os.Args) != 3 {
-			log.Fatal("no channel tag provided")
-		}
-		tag := os.Args[2]
-		tag, exists := find_row(db, tag, "./sql/read_row.sql")
-		if !exists {
-			log.Println("no channel found")
-			os.Exit(0)
-		}
-		deleteRow(db, tag)
-	case "cli":
 
 	case "playlist":
 		if len(os.Args) == 2 {
 			playlists := read_playlists(db)
-			fmt.Println(playlists)
+			headers, display_rows := get_playlist_display(playlists)
+			print_table(headers, display_rows)
 			return
 		}
-		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
-		create_cmd.Parse(os.Args[2:])
+		cmd.Parse(os.Args[2:])
 
 		if len(*delete_flag) != 0 {
 			err := delete_playlist(db, *delete_flag)
@@ -86,16 +93,17 @@ func main() {
 			}
 			os.Exit(0)
 		}
-		if len(*playlist_name) == 0 {
+		if len(*create_flag) == 0 {
 			log.Fatal("playlist name not provided")
 		}
+		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		query := get_user_input("Enter search terms: ")
 		filter := get_user_input("Filter: ")
 
 		q := csv_string(query)
 		f := csv_string(filter)
 
-		playlist_resp := create_playlist(db, *playlist_name, q, f, api_key, access_token)
+		playlist_resp := create_playlist(db, *create_flag, q, f, api_key, access_token)
 		populate_playlist(db, query, filter, playlist_resp.Id)
 
 	case "create_table":
@@ -107,9 +115,6 @@ func main() {
 	case "quota":
 		quota := read_quota(db)
 		fmt.Println(time.Now().Unix() - quota.timestamp.Unix())
-	case "read":
-		channels := readChannels(db)
-		fmt.Println(channels)
 	case "insert":
 		insert_row(db)
 	default:

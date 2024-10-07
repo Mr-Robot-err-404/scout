@@ -8,13 +8,12 @@ import (
 )
 
 type Playlist struct {
-	id               string
-	playlist_id      string
-	name             string
-	q                string
-	filter           string
-	inclusive_search bool
-	long_format      string
+	id          string
+	playlist_id string
+	name        string
+	q           string
+	filter      string
+	long_format string
 }
 
 func create_playlist(db *sql.DB, name string, q string, filter string, key string, access_token string) PlaylistResp {
@@ -26,7 +25,7 @@ func create_playlist(db *sql.DB, name string, q string, filter string, key strin
 	item := create_remote_playlist(name, key, access_token)
 	fmt.Println("created playlist")
 
-	create_playlist_row(db, item.Id, item.Snippet.Title, q, filter, true, true)
+	create_playlist_row(db, item.Id, item.Snippet.Title, q, filter, true)
 	return item
 }
 
@@ -71,9 +70,9 @@ func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id stri
 	fmt.Printf("added %v items to playlist\n", c)
 }
 
-func create_playlist_row(db *sql.DB, playlist_id string, name string, q string, filter string, inclusive bool, long bool) {
+func create_playlist_row(db *sql.DB, playlist_id string, name string, q string, filter string, long bool) {
 	insertQuery := readSQLFile("./sql/create_playlist.sql")
-	_, err := db.Exec(insertQuery, playlist_id, name, q, filter, inclusive, long)
+	_, err := db.Exec(insertQuery, playlist_id, name, q, filter, long)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,7 +100,7 @@ func read_playlists(db *sql.DB) []Playlist {
 	defer rows.Close()
 	for rows.Next() {
 		var playlist Playlist
-		err = rows.Scan(&playlist.id, &playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.inclusive_search, &playlist.long_format)
+		err = rows.Scan(&playlist.id, &playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.long_format)
 		if err != nil {
 			log.Fatal(err)
 		}
