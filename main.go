@@ -115,6 +115,15 @@ func main() {
 	case "quota":
 		quota := read_quota(db)
 		fmt.Println(time.Now().Unix() - quota.timestamp.Unix())
+	case "token":
+		credentials := readCredentialsFile("../.config/gcloud/application_default_credentials.json")
+		fmt.Println("----------------------------------------------")
+		fmt.Printf("REFRESH TOKEN %v\n", credentials.Refresh_token)
+		fmt.Println("----------------------------------------------")
+		fmt.Printf("CLIENT_ID %v\n", credentials.Client_id)
+		fmt.Println("----------------------------------------------")
+		fmt.Printf("CLIENT_SECRET %v\n", credentials.Client_secret)
+		fmt.Println("----------------------------------------------")
 	case "insert":
 		insert_row(db)
 	default:
