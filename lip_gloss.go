@@ -23,7 +23,7 @@ func juicy_print() {
 }
 
 func print_table(headers []string, rows [][]string) {
-	HeaderStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("219"))
+	HeaderStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
 	EvenRowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("110"))
 	OddRowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("69"))
 

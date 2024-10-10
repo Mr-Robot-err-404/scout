@@ -40,10 +40,8 @@ func createChannelRow(db *sql.DB, channel_id string, tag string, name string) er
 	insertQuery := readSQLFile("./sql/create_channel.sql")
 	_, err := db.Exec(insertQuery, channel_id, tag, name, "chess")
 	if err != nil {
-		log.Printf("Error inserting row: %v", err)
 		return err
 	}
-	fmt.Println("channel added")
 	return nil
 }
 
@@ -60,14 +58,14 @@ func readChannels(db *sql.DB) []Channel {
 	query := readSQLFile("./sql/read_all_channels.sql")
 	rows, err := db.Query(query)
 	if err != nil {
-		log.Fatal(err)
+		err_fatal(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var channel Channel
 		err = rows.Scan(&channel.id, &channel.channel_id, &channel.tag, &channel.name, &channel.category)
 		if err != nil {
-			log.Fatal("issue with scanning: ", err)
+			err_fatal(err)
 		}
 		channels = append(channels, channel)
 	}
@@ -78,10 +76,8 @@ func deleteRow(db *sql.DB, tag string) error {
 	query := readSQLFile("./sql/delete_row.sql")
 	_, err := db.Exec(query, tag)
 	if err != nil {
-		log.Printf("error deleting table: %v", err)
 		return err
 	}
-	fmt.Println("channel removed")
 	return nil
 }
 func make_trigger(db *sql.DB) error {

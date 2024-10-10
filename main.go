@@ -16,6 +16,8 @@ type Message struct {
 	Time int64
 }
 
+var sp = create_spinner()
+
 func main() {
 	if len(os.Args) < 2 || os.Args[1] == "help" {
 		help_txt, err := os.ReadFile("./help.txt")
@@ -33,14 +35,14 @@ func main() {
 	defer db.Close()
 
 	cmd := flag.NewFlagSet("create_cmd", flag.ExitOnError)
-	create_flag := cmd.String("create", "", "create")
+	create_flag := cmd.String("add", "", "add")
 	delete_flag := cmd.String("delete", "", "delete")
 
-	// TODO: add the Charm library for all CLI functions
+	// TODO: replace all logs with a state msg (load, success, err, info)
 
 	switch os.Args[1] {
 	case "cli":
-		// print_table()
+		logging_time()
 
 	case "channel":
 		if len(os.Args) == 2 {
@@ -53,29 +55,40 @@ func main() {
 		if len(*delete_flag) != 0 {
 			tag, exists := find_row(db, *delete_flag, "./sql/read_row.sql")
 			if !exists {
-				log.Println("no channel found with that tag")
+				err_msg("no channel found with that tag")
 			} else {
-				deleteRow(db, tag)
+				log := "delete channel"
+				load(log)
+				err = deleteRow(db, tag)
+				if err != nil {
+					err_msg(log)
+					err_resp(err)
+					return
+				}
+				success_msg(log)
 			}
 			return
 		}
 		if len(*create_flag) == 0 {
-			fmt.Println("no channel tag provided")
-			os.Exit(1)
+			err_msg("no channel tag provided")
+			return
 		}
 		_, exists := find_row(db, *create_flag, "./sql/read_row.sql")
 		if exists {
-			log.Println("Channel is already tracked ;)")
+			info_msg("Channel is already tracked")
 			return
 		}
 		key := os.Getenv("API_KEY")
 		item, err := get_channel_ID(*create_flag, key)
 
 		if err != nil {
-			log.Fatal(err)
+			err_fatal(err)
 		}
 		id, title, real_tag := item[0], item[1], item[2]
-		createChannelRow(db, id, real_tag, title)
+		err = createChannelRow(db, id, real_tag, title)
+		if err != nil {
+			err_fatal(err)
+		}
 
 	case "playlist":
 		if len(os.Args) == 2 {
