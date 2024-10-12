@@ -16,13 +16,15 @@ func DuckDuckGooseEnumerator(l list.Items, i int) string {
 }
 
 func juicy_print() {
-
 	l := list.New("Duck", "Duck", "Duck", "Duck", "Goose", "Duck", "Duck")
 	l = l.Enumerator(DuckDuckGooseEnumerator)
 	fmt.Println(l)
 }
 
 func print_table(headers []string, rows [][]string) {
+	if len(rows) == 0 {
+		info_msg_fatal("table is empty")
+	}
 	HeaderStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
 	EvenRowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("110"))
 	OddRowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("69"))

@@ -3,22 +3,22 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 )
 
-func get_user_input(msg string) []string {
+func get_user_input(msg string, required bool) []string {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Fprint(os.Stdout, msg)
 
 	scanner.Scan()
 	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		err_fatal(err)
 	}
 	str := scanner.Text()
-	if len(str) == 0 {
-		log.Fatal("absolutely spiffing choice, sir...")
+	if len(str) == 0 && required {
+		err := fmt.Errorf("that field is required good sir")
+		err_fatal(err)
 	}
 	q := []string{}
 

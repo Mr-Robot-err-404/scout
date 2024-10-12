@@ -90,14 +90,3 @@ func read_quota(db *sql.DB) Quota {
 	}
 	return quota
 }
-
-func insert_row(db *sql.DB) error {
-	insertQuery := readSQLFile("./sql/create_single_row.sql")
-	_, err := db.Exec(insertQuery, 10000)
-	if err != nil {
-		log.Printf("Error inserting row: %v", err)
-		return err
-	}
-	fmt.Println("row created")
-	return nil
-}

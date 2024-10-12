@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 )
@@ -32,11 +31,11 @@ type PlaylistSnippet struct {
 	} `json:"snippet"`
 }
 
-type PlaylistItem struct {
-	Snippet PlaylistItemSnippet `json:"snippet"`
+type PlaylistInfo struct {
+	Snippet PlaylistInfoSnippet `json:"snippet"`
 }
 
-type PlaylistItemSnippet struct {
+type PlaylistInfoSnippet struct {
 	PlaylistID string     `json:"playlistId"`
 	ResourceID ResourceID `json:"resourceId"`
 }
@@ -78,44 +77,44 @@ type PageInfo struct {
 	ResultsPerPage int
 }
 
-func create_remote_playlist(playlist_name string, key string, access_token string) PlaylistResp {
+func create_remote_playlist(playlist_name string, key string, access_token string) (PlaylistResp, error) {
+	var item PlaylistResp
 	var snippet PlaylistSnippet
 	snippet.Snippet.Title = playlist_name
 
 	route := "https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&videoDuration=long&key=" + key
 	json_body, err := json.Marshal(&snippet)
 	if err != nil {
-		log.Fatal(err)
+		return item, err
 	}
 	body_reader := bytes.NewReader(json_body)
 
 	req, err := http.NewRequest(http.MethodPost, route, body_reader)
 	if err != nil {
-		log.Fatal(err)
+		return item, err
 	}
 	req.Header.Set("Authorization", "Bearer "+access_token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return item, err
 	}
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("failed request with status: %v", resp.StatusCode)
-		log.Fatal(err)
+		err = fmt.Errorf("failed request with status: %v", resp.Status)
+		return item, err
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return item, err
 	}
-	var item PlaylistResp
 	err = json.Unmarshal(body, &item)
 
 	if err != nil {
-		log.Fatal(err)
+		return item, err
 	}
-	return item
+	return item, nil
 }
 
 func search_remote_channel(q string, channel_id string) (SearchResp, error) {
@@ -146,7 +145,7 @@ func search_remote_channel(q string, channel_id string) (SearchResp, error) {
 }
 
 func insert_playlist_item(playlist_id string, video_id string, key string, access_token string) (PlaylistInsertResp, error) {
-	var item PlaylistItem
+	var item PlaylistInfo
 	item.Snippet.PlaylistID = playlist_id
 	item.Snippet.ResourceID.VideoID = video_id
 	item.Snippet.ResourceID.Kind = "youtube#video"
@@ -201,7 +200,7 @@ func get_channel_ID(tag string, key string) ([]string, error) {
 		return []string{}, err
 	}
 	if resp.StatusCode != 200 {
-		return []string{}, fmt.Errorf("request failed with statusCode %v", resp.StatusCode)
+		return []string{}, fmt.Errorf("request failed with status %v", resp.Status)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
@@ -218,6 +217,5 @@ func get_channel_ID(tag string, key string) ([]string, error) {
 	if len(s.Items) == 0 {
 		return []string{}, fmt.Errorf("no channels were found for %s", tag)
 	}
-	fmt.Println(s.Items[0].Snippet.Title)
 	return []string{s.Items[0].Id, s.Items[0].Snippet.Title, s.Items[0].Snippet.CustomUrl}, nil
 }

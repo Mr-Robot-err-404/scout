@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -16,43 +15,55 @@ type Playlist struct {
 	long_format string
 }
 
+type PlaylistItem struct {
+	id      int
+	vid_id  int
+	list_id int
+	chan_id int
+}
+
 func create_playlist(db *sql.DB, name string, q string, filter string, key string, access_token string) PlaylistResp {
 	_, exists := find_row(db, name, "./sql/filter_playlist.sql")
 	if exists {
-		fmt.Println("playlist already exists")
-		os.Exit(0)
+		info_msg_fatal("playlist already exists")
 	}
-	item := create_remote_playlist(name, key, access_token)
-	fmt.Println("created playlist")
+	log := "create remote playlist"
+	load(log)
+	item, err := create_remote_playlist(name, key, access_token)
+	if err != nil {
+		err_msg(log)
+		err_fatal(err)
+	}
+	success_msg(log)
 
 	create_playlist_row(db, item.Id, item.Snippet.Title, q, filter, true)
 	return item
 }
 
-func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id string) {
+func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id string) []Video {
 	search_items := [][]SearchItem{}
 	channels := readChannels(db)
 	query := convert_and_parse(q)
-
-	fmt.Println("searching channels...")
 
 	for i := range channels {
 		curr := channels[i]
 		resp, err := search_remote_channel(query, curr.channel_id)
 		if err != nil {
-			fmt.Println(err)
+			err_msg(curr.name)
 			continue
 		}
+		success_msg(curr.name)
 		search_items = append(search_items, resp.Items)
 	}
 	playlist_items := rank_channels(search_items, filter)
 
 	if len(playlist_items) == 0 {
-		fmt.Println("no items found")
-		os.Exit(0)
+		info_msg_fatal("no matching search results")
 	}
 	api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
-	fmt.Println("inserting items into playlist...")
+	videos := []Video{}
+	log := "insert items into playlist"
+	load(log)
 
 	c := 0
 	for i := range playlist_items {
@@ -65,16 +76,22 @@ func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id stri
 			fmt.Println(err)
 			continue
 		}
+		vid := Video{title: playlist_items[i].Snippet.Title, video_id: video_id}
+		videos = append(videos, vid)
 		c++
 	}
-	fmt.Printf("added %v items to playlist\n", c)
+	success_msg(log)
+	msg := fmt.Sprintf("added %v items to playlist\n", c)
+	info_msg(msg)
+
+	return videos
 }
 
 func create_playlist_row(db *sql.DB, playlist_id string, name string, q string, filter string, long bool) {
 	insertQuery := readSQLFile("./sql/create_playlist.sql")
 	_, err := db.Exec(insertQuery, playlist_id, name, q, filter, long)
 	if err != nil {
-		log.Fatal(err)
+		err_fatal(err)
 	}
 }
 
@@ -82,10 +99,8 @@ func delete_playlist(db *sql.DB, name string) error {
 	query := readSQLFile("./sql/delete_playlist_row.sql")
 	_, err := db.Exec(query, name)
 	if err != nil {
-		log.Printf("error deleting table: %v", err)
 		return err
 	}
-	fmt.Println("playlist removed")
 	return nil
 }
 
@@ -95,14 +110,14 @@ func read_playlists(db *sql.DB) []Playlist {
 	query := readSQLFile("./sql/read_all_playlists.sql")
 	rows, err := db.Query(query)
 	if err != nil {
-		log.Fatal(err)
+		err_fatal(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var playlist Playlist
 		err = rows.Scan(&playlist.id, &playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.long_format)
 		if err != nil {
-			log.Fatal(err)
+			err_fatal(err)
 		}
 		playlists = append(playlists, playlist)
 	}

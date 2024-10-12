@@ -45,9 +45,7 @@ func err_resp(err error) {
 	fmt.Printf(s.Render(e)+"%v\n", err)
 }
 func err_fatal(err error) {
-	e := "ERROR"
-	s := lipgloss.NewStyle().Background(lipgloss.Color("1")).PaddingRight(1).PaddingLeft(1).MarginRight(1)
-	fmt.Printf(s.Render(e)+"%v\n", err)
+	err_resp(err)
 	os.Exit(0)
 }
 
@@ -55,26 +53,30 @@ func info_msg(msg string) {
 	t := "\u276F "
 	s := lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
 	fmt.Println(s.Render(t) + msg)
+}
 
+func info_msg_fatal(msg string) {
+	info_msg(msg)
+	os.Exit(0)
 }
 
 func logging_time() {
 	s := create_spinner()
 	msg := "fetch channels"
 	load(msg)
-	time.Sleep(4 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Stop()
 	success_msg(msg)
 
 	msg = "create playlist"
 	load(msg)
-	time.Sleep(4 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Stop()
 	success_msg(msg)
 
 	msg = "insert items"
 	load(msg)
-	time.Sleep(4 * time.Second)
+	time.Sleep(2 * time.Second)
 	s.Stop()
 	err_msg(msg)
 	err := fmt.Errorf("failed to insert items")

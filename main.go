@@ -3,18 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
 )
-
-type Message struct {
-	Name string
-	Body string
-	Time int64
-}
 
 var sp = create_spinner()
 
@@ -22,14 +15,14 @@ func main() {
 	if len(os.Args) < 2 || os.Args[1] == "help" {
 		help_txt, err := os.ReadFile("./help.txt")
 		if err != nil {
-			log.Fatal(err)
+			err_fatal(err)
 		}
 		fmt.Print(string(help_txt))
 		return
 	}
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal(err)
+		err_fatal(err)
 	}
 	db := setup_db()
 	defer db.Close()
@@ -38,11 +31,22 @@ func main() {
 	create_flag := cmd.String("add", "", "add")
 	delete_flag := cmd.String("delete", "", "delete")
 
-	// TODO: replace all logs with a state msg (load, success, err, info)
+	// TODO: track videos & playlist items
 
 	switch os.Args[1] {
 	case "cli":
-		logging_time()
+		err := insert_vid_row(db, "ABC123", "Shrek is life")
+		if err != nil {
+			err_fatal(err)
+		}
+		success_msg("inserted row")
+	case "vid":
+		videos, err := read_videos(db)
+		if err != nil {
+			err_fatal(err)
+		}
+		headers, display_rows := get_video_display(videos)
+		print_table(headers, display_rows)
 
 	case "channel":
 		if len(os.Args) == 2 {
@@ -56,17 +60,15 @@ func main() {
 			tag, exists := find_row(db, *delete_flag, "./sql/read_row.sql")
 			if !exists {
 				err_msg("no channel found with that tag")
-			} else {
-				log := "delete channel"
-				load(log)
-				err = deleteRow(db, tag)
-				if err != nil {
-					err_msg(log)
-					err_resp(err)
-					return
-				}
-				success_msg(log)
+				return
 			}
+			log := "delete channel"
+			err = deleteRow(db, tag)
+			if err != nil {
+				err_msg(log)
+				err_fatal(err)
+			}
+			success_msg(log)
 			return
 		}
 		if len(*create_flag) == 0 {
@@ -75,20 +77,25 @@ func main() {
 		}
 		_, exists := find_row(db, *create_flag, "./sql/read_row.sql")
 		if exists {
-			info_msg("Channel is already tracked")
-			return
+			info_msg_fatal("channel is already tracked")
 		}
 		key := os.Getenv("API_KEY")
+		log := "add channel"
+		load(log)
 		item, err := get_channel_ID(*create_flag, key)
 
 		if err != nil {
+			err_msg(log)
 			err_fatal(err)
 		}
 		id, title, real_tag := item[0], item[1], item[2]
 		err = createChannelRow(db, id, real_tag, title)
+
 		if err != nil {
+			err_msg(log)
 			err_fatal(err)
 		}
+		success_msg(log + " => " + title)
 
 	case "playlist":
 		if len(os.Args) == 2 {
@@ -102,27 +109,28 @@ func main() {
 		if len(*delete_flag) != 0 {
 			err := delete_playlist(db, *delete_flag)
 			if err != nil {
-				os.Exit(1)
+				err_fatal(err)
 			}
-			os.Exit(0)
-		}
-		if len(*create_flag) == 0 {
-			log.Fatal("playlist name not provided")
+			success_msg("playlist deleted")
+			return
 		}
 		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
-		query := get_user_input("Enter search terms: ")
-		filter := get_user_input("Filter: ")
+		query := get_user_input("Enter search terms: ", true)
+		filter := get_user_input("Filter: ", false)
 
 		q := csv_string(query)
 		f := csv_string(filter)
 
 		playlist_resp := create_playlist(db, *create_flag, q, f, api_key, access_token)
-		populate_playlist(db, query, filter, playlist_resp.Id)
+		videos := populate_playlist(db, query, filter, playlist_resp.Id)
+		add_vid_rows(db, videos)
 
 	case "create_table":
-		createTable(db, "./sql/create_playlist_table.sql")
+		createTable(db, "./sql/create_playlist_item_table.sql")
 	case "delete_table":
 		deleteTable(db, "./sql/delete_playlist_table.sql")
+	case "reset":
+		clear_vid_records(db)
 	case "refresh":
 		refresh_quota(db)
 	case "quota":
@@ -131,15 +139,14 @@ func main() {
 	case "token":
 		credentials := readCredentialsFile("../.config/gcloud/application_default_credentials.json")
 		fmt.Println("----------------------------------------------")
-		fmt.Printf("REFRESH TOKEN %v\n", credentials.Refresh_token)
+		fmt.Printf("REFRESH_TOKEN %v\n", credentials.Refresh_token)
 		fmt.Println("----------------------------------------------")
-		fmt.Printf("CLIENT_ID %v\n", credentials.Client_id)
+		fmt.Printf("CLIENT_ID     %v\n", credentials.Client_id)
 		fmt.Println("----------------------------------------------")
 		fmt.Printf("CLIENT_SECRET %v\n", credentials.Client_secret)
 		fmt.Println("----------------------------------------------")
-	case "insert":
-		insert_row(db)
 	default:
-		log.Fatal("Invalid subcommand. To see usable commands, use 'cli help'")
+		err = fmt.Errorf("Invalid subcommand. To see available commands, run 'scout help'")
+		err_fatal(err)
 	}
 }
