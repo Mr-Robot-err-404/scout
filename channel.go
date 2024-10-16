@@ -3,7 +3,6 @@ package main
 import "database/sql"
 
 type Channel struct {
-	id         int
 	channel_id string
 	tag        string
 	name       string
@@ -20,11 +19,20 @@ func readChannels(db *sql.DB) []Channel {
 	defer rows.Close()
 	for rows.Next() {
 		var channel Channel
-		err = rows.Scan(&channel.id, &channel.channel_id, &channel.tag, &channel.name, &channel.category)
+		err = rows.Scan(&channel.channel_id, &channel.tag, &channel.name, &channel.category)
 		if err != nil {
 			err_fatal(err)
 		}
 		channels = append(channels, channel)
 	}
 	return channels
+}
+
+func drop_channel_table(db *sql.DB) {
+	query := "DROP TABLE channel"
+	_, err := db.Exec(query)
+	if err != nil {
+		err_fatal(err)
+	}
+	success_msg("dropped table")
 }

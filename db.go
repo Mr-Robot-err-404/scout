@@ -27,10 +27,8 @@ func createTable(db *sql.DB, path string) error {
 	query := readSQLFile(path)
 	_, err := db.Exec(query)
 	if err != nil {
-		log.Printf("Error creating test_table: %v", err)
 		return err
 	}
-	log.Println("created table")
 	return nil
 }
 

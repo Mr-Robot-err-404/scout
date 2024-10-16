@@ -7,19 +7,11 @@ import (
 )
 
 type Playlist struct {
-	id          string
 	playlist_id string
 	name        string
 	q           string
 	filter      string
 	long_format string
-}
-
-type PlaylistItem struct {
-	id      int
-	vid_id  int
-	list_id int
-	chan_id int
 }
 
 func create_playlist(db *sql.DB, name string, q string, filter string, key string, access_token string) PlaylistResp {
@@ -62,8 +54,6 @@ func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id stri
 	}
 	api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 	videos := []Video{}
-	log := "insert items into playlist"
-	load(log)
 
 	c := 0
 	for i := range playlist_items {
@@ -73,14 +63,13 @@ func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id stri
 		}
 		_, err := insert_playlist_item(playlist_id, video_id, api_key, access_token)
 		if err != nil {
-			fmt.Println(err)
+			err_resp(err)
 			continue
 		}
 		vid := Video{title: playlist_items[i].Snippet.Title, video_id: video_id}
 		videos = append(videos, vid)
 		c++
 	}
-	success_msg(log)
 	msg := fmt.Sprintf("added %v items to playlist\n", c)
 	info_msg(msg)
 
@@ -115,11 +104,20 @@ func read_playlists(db *sql.DB) []Playlist {
 	defer rows.Close()
 	for rows.Next() {
 		var playlist Playlist
-		err = rows.Scan(&playlist.id, &playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.long_format)
+		err = rows.Scan(&playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.long_format)
 		if err != nil {
 			err_fatal(err)
 		}
 		playlists = append(playlists, playlist)
 	}
 	return playlists
+}
+
+func drop_playlist_table(db *sql.DB) {
+	query := "DROP TABLE playlist"
+	_, err := db.Exec(query)
+	if err != nil {
+		err_fatal(err)
+	}
+	success_msg("dropped table")
 }

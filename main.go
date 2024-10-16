@@ -35,7 +35,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "cli":
-		err := insert_vid_row(db, "ABC123", "Shrek is life")
+		err := insert_item_row(db, "If_5JtqQ4y0", "PL-vGMW-bu9eVAQ-J8GTtLh4DLO4BtvVkg", "UCXy10-NEFGxQ3b4NVrzHw1Q")
 		if err != nil {
 			err_fatal(err)
 		}
@@ -114,10 +114,11 @@ func main() {
 			success_msg("playlist deleted")
 			return
 		}
-		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		query := get_user_input("Enter search terms: ", true)
 		filter := get_user_input("Filter: ", false)
 
+		check_token(db)
+		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		q := csv_string(query)
 		f := csv_string(filter)
 
@@ -125,18 +126,38 @@ func main() {
 		videos := populate_playlist(db, query, filter, playlist_resp.Id)
 		add_vid_rows(db, videos)
 
-	case "create_table":
-		createTable(db, "./sql/create_playlist_item_table.sql")
-	case "delete_table":
-		deleteTable(db, "./sql/delete_playlist_table.sql")
+	case "table":
+		err := createTable(db, "./sql/daily_quota.sql")
+		if err != nil {
+			err_fatal(err)
+		}
+		success_msg("created table")
+	case "items":
+		items, err := read_playlist_items(db)
+		if err != nil {
+			err_fatal(err)
+		}
+		headers, display_rows := get_items_display(items)
+		print_table(headers, display_rows)
+
 	case "reset":
-		clear_vid_records(db)
+		clear_item_table(db)
+	case "drop":
+		drop_quota_table(db)
+	case "insert":
+		init_quota_row(db)
+
 	case "refresh":
-		refresh_quota(db)
+		refresh_token(db)
+
 	case "quota":
-		quota := read_quota(db)
-		fmt.Println(time.Now().Unix() - quota.timestamp.Unix())
+		quota, err := read_quota(db)
+		if err != nil {
+			err_fatal(err)
+		}
+		fmt.Println(time.Now().Unix() - quota.last_refresh.Unix())
 	case "token":
+		access_token := os.Getenv("ACCESS_TOKEN")
 		credentials := readCredentialsFile("../.config/gcloud/application_default_credentials.json")
 		fmt.Println("----------------------------------------------")
 		fmt.Printf("REFRESH_TOKEN %v\n", credentials.Refresh_token)
@@ -145,6 +166,9 @@ func main() {
 		fmt.Println("----------------------------------------------")
 		fmt.Printf("CLIENT_SECRET %v\n", credentials.Client_secret)
 		fmt.Println("----------------------------------------------")
+		fmt.Printf("ACCESS_TOKEN %v\n", access_token)
+		fmt.Println("----------------------------------------------")
+
 	default:
 		err = fmt.Errorf("Invalid subcommand. To see available commands, run 'scout help'")
 		err_fatal(err)

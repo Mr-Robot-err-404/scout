@@ -1,2 +1,2 @@
 UPDATE quota 
-SET updated_at = CURRENT_TIMESTAMP;
+SET last_refresh = CURRENT_TIMESTAMP;

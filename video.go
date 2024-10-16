@@ -47,6 +47,16 @@ func add_vid_rows(db *sql.DB, videos []Video) {
 	success_resp()
 }
 
+func drop_vid_table(db *sql.DB) {
+	query := "DROP TABLE video"
+	_, err := db.Exec(query)
+	if err != nil {
+		err_fatal(err)
+	}
+	success_msg("dropped table")
+
+}
+
 func clear_vid_records(db *sql.DB) {
 	query := "DELETE FROM video"
 	_, err := db.Exec(query)
