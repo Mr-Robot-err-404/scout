@@ -11,10 +11,11 @@ type Playlist struct {
 	name        string
 	q           string
 	filter      string
-	long_format string
+	format      string
+	items       string
 }
 
-func create_playlist(db *sql.DB, name string, q string, filter string, key string, access_token string) PlaylistResp {
+func create_playlist(db *sql.DB, name string, key string, access_token string, units *int) PlaylistResp {
 	_, exists := find_row(db, name, "./sql/filter_playlist.sql")
 	if exists {
 		info_msg_fatal("playlist already exists")
@@ -27,15 +28,20 @@ func create_playlist(db *sql.DB, name string, q string, filter string, key strin
 		err_fatal(err)
 	}
 	success_msg(log)
+	*units -= quota_map["insert"]
 
-	create_playlist_row(db, item.Id, item.Snippet.Title, q, filter, true)
 	return item
 }
 
-func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id string) []Video {
+func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id string, units *int, max_items int) ([]Video, int) {
 	search_items := [][]SearchItem{}
-	channels := readChannels(db)
 	query := convert_and_parse(q)
+	channels := read_channels(db)
+	vids, err := read_videos(db)
+
+	if err != nil {
+		err_fatal(err)
+	}
 
 	for i := range channels {
 		curr := channels[i]
@@ -46,8 +52,9 @@ func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id stri
 		}
 		success_msg(curr.name)
 		search_items = append(search_items, resp.Items)
+		*units -= quota_map["search"]
 	}
-	playlist_items := rank_channels(search_items, filter)
+	playlist_items := rank_channels(search_items, filter, vids, max_items)
 
 	if len(playlist_items) == 0 {
 		info_msg_fatal("no matching search results")
@@ -69,16 +76,17 @@ func populate_playlist(db *sql.DB, q []string, filter []string, playlist_id stri
 		vid := Video{title: playlist_items[i].Snippet.Title, video_id: video_id}
 		videos = append(videos, vid)
 		c++
+		*units -= quota_map["insert"]
 	}
 	msg := fmt.Sprintf("added %v items to playlist\n", c)
 	info_msg(msg)
 
-	return videos
+	return videos, c
 }
 
-func create_playlist_row(db *sql.DB, playlist_id string, name string, q string, filter string, long bool) {
-	insertQuery := readSQLFile("./sql/create_playlist.sql")
-	_, err := db.Exec(insertQuery, playlist_id, name, q, filter, long)
+func add_playlist_row(db *sql.DB, playlist_id string, name string, q string, filter string, c int, format string, category string) {
+	query := readSQLFile("./sql/create_playlist.sql")
+	_, err := db.Exec(query, playlist_id, name, q, filter, format, c, category)
 	if err != nil {
 		err_fatal(err)
 	}
@@ -104,13 +112,22 @@ func read_playlists(db *sql.DB) []Playlist {
 	defer rows.Close()
 	for rows.Next() {
 		var playlist Playlist
-		err = rows.Scan(&playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.long_format)
+		err = rows.Scan(&playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.format, &playlist.items)
 		if err != nil {
 			err_fatal(err)
 		}
 		playlists = append(playlists, playlist)
 	}
 	return playlists
+}
+
+func clear_playlist_table(db *sql.DB) {
+	query := "DELETE FROM playlist"
+	_, err := db.Exec(query)
+	if err != nil {
+		err_fatal(err)
+	}
+	success_msg("cleared table")
 }
 
 func drop_playlist_table(db *sql.DB) {

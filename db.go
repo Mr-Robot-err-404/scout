@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"net/url"
 	"os"
 
@@ -18,7 +17,7 @@ func setup_db() *sql.DB {
 	db, err := sql.Open("postgres", conn.String())
 
 	if err != nil {
-		log.Fatal(err)
+		err_fatal(err)
 	}
 	return db
 }
@@ -32,7 +31,7 @@ func createTable(db *sql.DB, path string) error {
 	return nil
 }
 
-func createChannelRow(db *sql.DB, channel_id string, tag string, name string) error {
+func create_channel_row(db *sql.DB, channel_id string, tag string, name string) error {
 	insertQuery := readSQLFile("./sql/create_channel.sql")
 	_, err := db.Exec(insertQuery, channel_id, tag, name, "chess")
 	if err != nil {

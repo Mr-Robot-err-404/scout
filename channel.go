@@ -9,7 +9,7 @@ type Channel struct {
 	category   string
 }
 
-func readChannels(db *sql.DB) []Channel {
+func read_channels(db *sql.DB) []Channel {
 	channels := []Channel{}
 	query := readSQLFile("./sql/read_all_channels.sql")
 	rows, err := db.Query(query)

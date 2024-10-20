@@ -82,7 +82,7 @@ func create_remote_playlist(playlist_name string, key string, access_token strin
 	var snippet PlaylistSnippet
 	snippet.Snippet.Title = playlist_name
 
-	route := "https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&videoDuration=long&key=" + key
+	route := "https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&key=" + key
 	json_body, err := json.Marshal(&snippet)
 	if err != nil {
 		return item, err
@@ -121,7 +121,7 @@ func search_remote_channel(q string, channel_id string) (SearchResp, error) {
 	var res SearchResp
 	api_key := os.Getenv("API_KEY")
 
-	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&channelId=" + channel_id + "&type=video&q=" + q + "&key=" + api_key
+	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&videoDuration=long&channelId=" + channel_id + "&type=video&q=" + q + "&key=" + api_key
 	resp, err := http.Get(route)
 
 	if err != nil {
@@ -187,7 +187,7 @@ func insert_playlist_item(playlist_id string, video_id string, key string, acces
 	return res, nil
 }
 
-func get_channel_ID(tag string, key string) ([]string, error) {
+func get_channel_ID(tag string, key string, units *int) ([]string, error) {
 	term := tag
 	if string(term[0]) == "@" {
 		term = term[1:]
@@ -202,6 +202,7 @@ func get_channel_ID(tag string, key string) ([]string, error) {
 	if resp.StatusCode != 200 {
 		return []string{}, fmt.Errorf("request failed with status %v", resp.Status)
 	}
+	*units -= quota_map["get"]
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 

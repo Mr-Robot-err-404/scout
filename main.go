@@ -4,12 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 )
 
 var sp = create_spinner()
+var quota_map = init_quota_map()
 
 func main() {
 	if len(os.Args) < 2 || os.Args[1] == "help" {
@@ -31,7 +31,12 @@ func main() {
 	create_flag := cmd.String("add", "", "add")
 	delete_flag := cmd.String("delete", "", "delete")
 
-	// TODO: track videos & playlist items
+	// config_cmd := flag.NewFlagSet("config_cmd", flag.ExitOnError)
+	// category_flag := config_cmd.String("category", "", "category")
+	// format_flag := config_cmd.String("format", "", "format")
+	// max_flag := config_cmd.String("max", "", "max")
+
+	// TODO: config cmd
 
 	switch os.Args[1] {
 	case "cli":
@@ -50,7 +55,7 @@ func main() {
 
 	case "channel":
 		if len(os.Args) == 2 {
-			channels := readChannels(db)
+			channels := read_channels(db)
 			headers, display_rows := get_channel_display(channels)
 			print_table(headers, display_rows)
 			return
@@ -79,23 +84,30 @@ func main() {
 		if exists {
 			info_msg_fatal("channel is already tracked")
 		}
-		key := os.Getenv("API_KEY")
 		log := "add channel"
 		load(log)
-		item, err := get_channel_ID(*create_flag, key)
+		quota, err := read_quota(db)
 
+		if err != nil {
+			err_fatal(err)
+		}
+		units := quota.quota
+		defer update_quota(db, &units)
+
+		key := os.Getenv("API_KEY")
+		item, err := get_channel_ID(*create_flag, key, &units)
 		if err != nil {
 			err_msg(log)
 			err_fatal(err)
 		}
 		id, title, real_tag := item[0], item[1], item[2]
-		err = createChannelRow(db, id, real_tag, title)
+		err = create_channel_row(db, id, real_tag, title)
 
 		if err != nil {
 			err_msg(log)
 			err_fatal(err)
 		}
-		success_msg(log + " => " + title)
+		success_msg(log)
 
 	case "playlist":
 		if len(os.Args) == 2 {
@@ -117,17 +129,36 @@ func main() {
 		query := get_user_input("Enter search terms: ", true)
 		filter := get_user_input("Filter: ", false)
 
+		quota, err := read_quota(db)
+		if err != nil {
+			err_fatal(err)
+		}
+		units := quota.quota
+		defer update_quota(db, &units)
+
 		check_token(db)
 		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+		config, err := read_config_file()
+		if err != nil {
+			err_fatal(err)
+		}
 		q := csv_string(query)
 		f := csv_string(filter)
 
-		playlist_resp := create_playlist(db, *create_flag, q, f, api_key, access_token)
-		videos := populate_playlist(db, query, filter, playlist_resp.Id)
+		playlist_resp := create_playlist(db, *create_flag, api_key, access_token, &units)
+		videos, c := populate_playlist(db, query, filter, playlist_resp.Id, &units, config.max_items)
+		add_playlist_row(db, playlist_resp.Id, playlist_resp.Snippet.Title, q, f, c, config.format, config.category)
 		add_vid_rows(db, videos)
 
+	case "config":
+		config, err := read_config_file()
+		if err != nil {
+			err_fatal(err)
+		}
+		print_config(config)
+
 	case "table":
-		err := createTable(db, "./sql/daily_quota.sql")
+		err := createTable(db, "./sql/create_playlist_table.sql")
 		if err != nil {
 			err_fatal(err)
 		}
@@ -141,9 +172,9 @@ func main() {
 		print_table(headers, display_rows)
 
 	case "reset":
-		clear_item_table(db)
+		clear_vid_records(db)
 	case "drop":
-		drop_quota_table(db)
+		drop_config_table(db)
 	case "insert":
 		init_quota_row(db)
 
@@ -155,19 +186,11 @@ func main() {
 		if err != nil {
 			err_fatal(err)
 		}
-		fmt.Println(time.Now().Unix() - quota.last_refresh.Unix())
+		msg := fmt.Sprintf("units remaining => %v", quota.quota)
+		info_msg(msg)
 	case "token":
 		access_token := os.Getenv("ACCESS_TOKEN")
-		credentials := readCredentialsFile("../.config/gcloud/application_default_credentials.json")
-		fmt.Println("----------------------------------------------")
-		fmt.Printf("REFRESH_TOKEN %v\n", credentials.Refresh_token)
-		fmt.Println("----------------------------------------------")
-		fmt.Printf("CLIENT_ID     %v\n", credentials.Client_id)
-		fmt.Println("----------------------------------------------")
-		fmt.Printf("CLIENT_SECRET %v\n", credentials.Client_secret)
-		fmt.Println("----------------------------------------------")
-		fmt.Printf("ACCESS_TOKEN %v\n", access_token)
-		fmt.Println("----------------------------------------------")
+		show_gcloud_tokens(access_token)
 
 	default:
 		err = fmt.Errorf("Invalid subcommand. To see available commands, run 'scout help'")

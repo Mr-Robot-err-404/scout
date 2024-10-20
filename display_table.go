@@ -10,7 +10,7 @@ func get_playlist_display(playlists []Playlist) ([]string, [][]string) {
 		curr := playlists[i]
 		q := get_display_query(strings.Split(curr.q, ","))
 		filter := get_display_query(strings.Split(curr.filter, ","))
-		row := []string{curr.name, q, filter, "0", curr.long_format, curr.playlist_id}
+		row := []string{curr.name, q, filter, curr.items, curr.format, curr.playlist_id}
 		display_rows = append(display_rows, row)
 	}
 	return headers, display_rows

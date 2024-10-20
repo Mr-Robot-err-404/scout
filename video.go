@@ -3,7 +3,6 @@ package main
 import "database/sql"
 
 type Video struct {
-	id       int
 	video_id string
 	title    string
 }
@@ -18,7 +17,7 @@ func read_videos(db *sql.DB) ([]Video, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var vid Video
-		err = rows.Scan(&vid.id, &vid.video_id, &vid.title)
+		err = rows.Scan(&vid.video_id, &vid.title)
 		if err != nil {
 			return videos, err
 		}

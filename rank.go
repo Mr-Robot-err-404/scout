@@ -7,16 +7,17 @@ import (
 	"strings"
 )
 
-func rank_channels(lists [][]SearchItem, q []string) []SearchItem {
+func rank_channels(lists [][]SearchItem, q []string, visited_vids []Video, max_items int) []SearchItem {
 	filtered_lists := [][]SearchItem{}
+	vid_map := get_vid_map(visited_vids)
 
 	for i := range lists {
 		items := lists[i]
-		filter_list(&items, q)
+		filter_list(&items, q, vid_map)
 		filtered_lists = append(filtered_lists, items)
 	}
 	max := max_len(filtered_lists)
-	items := fill_playlist(filtered_lists, max, 5)
+	items := fill_playlist(filtered_lists, max, max_items)
 	return items
 }
 
@@ -38,16 +39,21 @@ func fill_playlist(lists [][]SearchItem, max int, capacity int) []SearchItem {
 	return playlist_items
 }
 
-func filter_list(videos *[]SearchItem, q []string) {
+func filter_list(videos *[]SearchItem, q []string, visited map[string]string) {
 	items := *videos
 	video_items := []SearchItem{}
 
 	for i := range items {
 		curr := items[i]
 		title, desc := curr.Snippet.Title, curr.Snippet.Description
+		video_id := curr.Id.VideoId
 		valid := 0
 
 		if len(title) == 0 || len(desc) == 0 {
+			continue
+		}
+		_, exists := visited[video_id]
+		if exists {
 			continue
 		}
 		for _, s := range q {
@@ -85,6 +91,16 @@ func matching_terms(q string, title string, desc string) int {
 		return 1
 	}
 	return 0
+}
+
+func get_vid_map(vids []Video) map[string]string {
+	vid_map := make(map[string]string)
+	for i := range vids {
+		id := vids[i].video_id
+		title := vids[i].title
+		vid_map[id] = title
+	}
+	return vid_map
 }
 
 func is_substring(str string, sub []string) bool {

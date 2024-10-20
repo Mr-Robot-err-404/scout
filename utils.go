@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"net/url"
 )
 
@@ -52,6 +53,20 @@ func convert_and_parse(q []string) string {
 		query += s
 	}
 	return parse_query(query)
+}
+
+func show_gcloud_tokens(access_token string) {
+	credentials := readCredentialsFile("../.config/gcloud/application_default_credentials.json")
+	fmt.Println("----------------------------------------------")
+	fmt.Printf("REFRESH_TOKEN %v\n", credentials.Refresh_token)
+	fmt.Println("----------------------------------------------")
+	fmt.Printf("CLIENT_ID     %v\n", credentials.Client_id)
+	fmt.Println("----------------------------------------------")
+	fmt.Printf("CLIENT_SECRET %v\n", credentials.Client_secret)
+	fmt.Println("----------------------------------------------")
+	fmt.Printf("ACCESS_TOKEN %v\n", access_token)
+	fmt.Println("----------------------------------------------")
+
 }
 
 func get_channel_IDs(channels []Channel) []string {

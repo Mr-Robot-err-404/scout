@@ -3,6 +3,8 @@ CREATE TABLE IF NOT EXISTS playlist (
 	name VARCHAR(100),
 	q VARCHAR(500),
 	filter VARCHAR(500),
-	long_format BOOLEAN DEFAULT TRUE,
+	format VARCHAR(100),
+	items INTEGER,
+	category VARCHAR(100),
 	PRIMARY KEY (playlist_id)
 )
