@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/url"
+	"strconv"
 )
 
 func find_row(db *sql.DB, search_term string, path string) (string, bool) {
@@ -53,6 +54,33 @@ func convert_and_parse(q []string) string {
 		query += s
 	}
 	return parse_query(query)
+}
+
+func validate_config_flags(format string, category string, max_items string) (map[string]string, error) {
+	config_options := make(map[string]string)
+	if len(format) > 0 {
+		if format == "short" || format == "medium" || format == "long" {
+			config_options["format"] = format
+		} else {
+			err := fmt.Errorf("invalid config option: 'format'. Accepted values: short || medium || long")
+			return config_options, err
+		}
+	}
+	if len(category) > 0 {
+		config_options["category"] = category
+	}
+	if len(max_items) > 0 {
+		num, err := strconv.Atoi(max_items)
+		if err != nil {
+			return config_options, err
+		}
+		if num < 0 || num > 100 {
+			err := fmt.Errorf("invalid config option: 'max'. Accepted values: 0 -> 100")
+			return config_options, err
+		}
+		config_options["max_items"] = max_items
+	}
+	return config_options, nil
 }
 
 func show_gcloud_tokens(access_token string) {

@@ -30,13 +30,14 @@ func main() {
 	cmd := flag.NewFlagSet("create_cmd", flag.ExitOnError)
 	create_flag := cmd.String("add", "", "add")
 	delete_flag := cmd.String("delete", "", "delete")
+	edit_flag := cmd.String("edit", "", "edit")
 
-	// config_cmd := flag.NewFlagSet("config_cmd", flag.ExitOnError)
-	// category_flag := config_cmd.String("category", "", "category")
-	// format_flag := config_cmd.String("format", "", "format")
-	// max_flag := config_cmd.String("max", "", "max")
+	config_cmd := flag.NewFlagSet("config_cmd", flag.ExitOnError)
+	format_flag := config_cmd.String("format", "", "format")
+	category_flag := config_cmd.String("category", "", "category")
+	max_flag := config_cmd.String("max", "", "max")
 
-	// TODO: config cmd
+	// TODO: edit cmd for playlists & channel
 
 	switch os.Args[1] {
 	case "cli":
@@ -109,7 +110,7 @@ func main() {
 		}
 		success_msg(log)
 
-	case "playlist":
+	case "play":
 		if len(os.Args) == 2 {
 			playlists := read_playlists(db)
 			headers, display_rows := get_playlist_display(playlists)
@@ -125,6 +126,9 @@ func main() {
 			}
 			success_msg("playlist deleted")
 			return
+		}
+		if len(*edit_flag) != 0 {
+			// TODO: edit looks for playlist_id
 		}
 		query := get_user_input("Enter search terms: ", true)
 		filter := get_user_input("Filter: ", false)
@@ -155,7 +159,20 @@ func main() {
 		if err != nil {
 			err_fatal(err)
 		}
-		print_config(config)
+		if len(os.Args) == 2 {
+			print_config(config)
+			return
+		}
+		config_cmd.Parse(os.Args[2:])
+		config_options, err := validate_config_flags(*format_flag, *category_flag, *max_flag)
+		if err != nil {
+			err_fatal(err)
+		}
+		err = update_config_file(config_options)
+		if err != nil {
+			err_fatal(err)
+		}
+		success_msg("updated config file")
 
 	case "table":
 		err := createTable(db, "./sql/create_playlist_table.sql")

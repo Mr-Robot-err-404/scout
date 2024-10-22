@@ -29,11 +29,11 @@ func init_config_table(db *sql.DB) {
 	if err != nil {
 		err_fatal(err)
 	}
-	update_config_file(config)
-	success_msg("created config table")
+	setup_config_file(config)
+	success_msg("config setup")
 }
 
-func update_config_file(config Config) error {
+func setup_config_file(config Config) error {
 	env, err := get_config_map()
 	if err != nil {
 		return err
@@ -41,6 +41,21 @@ func update_config_file(config Config) error {
 	env["format"] = config.format
 	env["category"] = config.category
 	env["max"] = strconv.Itoa(config.max_items)
+	err = godotenv.Write(env, "./.config")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func update_config_file(config map[string]string) error {
+	env, err := get_config_map()
+	if err != nil {
+		return err
+	}
+	for key, value := range config {
+		env[key] = value
+	}
 	err = godotenv.Write(env, "./.config")
 	if err != nil {
 		return err
@@ -67,9 +82,9 @@ func insert_config_row(db *sql.DB, config Config) error {
 }
 
 func print_config(config Config) {
-	format_msg := fmt.Sprintf("video format: %v", config.format)
-	category_msg := fmt.Sprintf("category: %v", config.category)
-	max_msg := fmt.Sprintf("max items: %v", config.max_items)
+	format_msg := fmt.Sprintf("video format | %v", config.format)
+	category_msg := fmt.Sprintf("category     | %v", config.category)
+	max_msg := fmt.Sprintf("max items    | %v", config.max_items)
 
 	info_msg(format_msg)
 	info_msg(category_msg)
