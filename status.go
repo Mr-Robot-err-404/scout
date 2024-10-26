@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -60,26 +61,12 @@ func info_msg_fatal(msg string) {
 	os.Exit(0)
 }
 
-func logging_time() {
-	s := create_spinner()
-	msg := "fetch channels"
-	load(msg)
-	time.Sleep(2 * time.Second)
-	s.Stop()
-	success_msg(msg)
+func print_title(msg string) {
+	s := lipgloss.NewStyle().Bold(true)
+	fmt.Println(s.Render(strings.ToUpper(msg)))
+}
 
-	msg = "create playlist"
-	load(msg)
-	time.Sleep(2 * time.Second)
-	s.Stop()
-	success_msg(msg)
-
-	msg = "insert items"
-	load(msg)
-	time.Sleep(2 * time.Second)
-	s.Stop()
-	err_msg(msg)
-	err := fmt.Errorf("failed to insert items")
-	err_fatal(err)
-
+func print_title_with_bg(msg string) {
+	s := lipgloss.NewStyle().Bold(true).Background(lipgloss.Color("4")).PaddingRight(1).PaddingLeft(1).MarginRight(1)
+	fmt.Println(s.Render(strings.ToUpper(msg)))
 }

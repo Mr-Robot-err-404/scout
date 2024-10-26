@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"scout/scout_db"
 
 	"github.com/joho/godotenv"
 )
@@ -24,9 +25,10 @@ func main() {
 	if err != nil {
 		err_fatal(err)
 	}
-	db := setup_db()
-	defer db.Close()
-
+	err = connect_db("./app.db")
+	if err != nil {
+		err_fatal(err)
+	}
 	cmd := flag.NewFlagSet("create_cmd", flag.ExitOnError)
 	create_flag := cmd.String("add", "", "add")
 	delete_flag := cmd.String("delete", "", "delete")
@@ -37,17 +39,24 @@ func main() {
 	category_flag := config_cmd.String("category", "", "category")
 	max_flag := config_cmd.String("max", "", "max")
 
-	// TODO: edit cmd for playlists & channel
+	// TODO: refactor using sqlc queries
 
 	switch os.Args[1] {
 	case "cli":
-		err := insert_item_row(db, "If_5JtqQ4y0", "PL-vGMW-bu9eVAQ-J8GTtLh4DLO4BtvVkg", "UCXy10-NEFGxQ3b4NVrzHw1Q")
+	case "setup":
+		err := create_tables()
 		if err != nil {
 			err_fatal(err)
 		}
-		success_msg("inserted row")
+		success_msg("created tables")
+		err = init_quota_row()
+		if err != nil {
+			err_fatal(err)
+		}
+		success_msg("quota row initialized")
+
 	case "vid":
-		videos, err := read_videos(db)
+		videos, err := read_videos()
 		if err != nil {
 			err_fatal(err)
 		}
@@ -56,20 +65,23 @@ func main() {
 
 	case "channel":
 		if len(os.Args) == 2 {
-			channels := read_channels(db)
+			channels := read_channels()
 			headers, display_rows := get_channel_display(channels)
 			print_table(headers, display_rows)
 			return
 		}
 		cmd.Parse(os.Args[2:])
 		if len(*delete_flag) != 0 {
-			tag, exists := find_row(db, *delete_flag, "./sql/read_row.sql")
-			if !exists {
-				err_msg("no channel found with that tag")
-				return
+			tag, err, _ := find_channel(*delete_flag)
+			if err != nil {
+				if err.Error() == "sql: no rows in result set" {
+					err_msg("no channel found with that tag")
+					return
+				}
+				err_fatal(err)
 			}
 			log := "delete channel"
-			err = deleteRow(db, tag)
+			err = queries.Delete_channel_row(ctx, tag)
 			if err != nil {
 				err_msg(log)
 				err_fatal(err)
@@ -78,22 +90,26 @@ func main() {
 			return
 		}
 		if len(*create_flag) == 0 {
-			err_msg("no channel tag provided")
+			err_msg("invalid flags for channel cmd")
 			return
 		}
-		_, exists := find_row(db, *create_flag, "./sql/read_row.sql")
+		_, _, exists := find_channel(*create_flag)
 		if exists {
 			info_msg_fatal("channel is already tracked")
 		}
+		config, err := read_config_file()
+		if err != nil {
+			err_fatal(err)
+		}
 		log := "add channel"
 		load(log)
-		quota, err := read_quota(db)
+		quota, err := read_quota()
 
 		if err != nil {
 			err_fatal(err)
 		}
 		units := quota.quota
-		defer update_quota(db, &units)
+		defer update_quota(&units)
 
 		key := os.Getenv("API_KEY")
 		item, err := get_channel_ID(*create_flag, key, &units)
@@ -102,7 +118,8 @@ func main() {
 			err_fatal(err)
 		}
 		id, title, real_tag := item[0], item[1], item[2]
-		err = create_channel_row(db, id, real_tag, title)
+		params := scout_db.Create_channel_row_params{ChannelID: id, Name: title, Tag: real_tag, Category: config.category}
+		err = queries.Create_channel_row(ctx, params)
 
 		if err != nil {
 			err_msg(log)
@@ -112,7 +129,7 @@ func main() {
 
 	case "play":
 		if len(os.Args) == 2 {
-			playlists := read_playlists(db)
+			playlists := read_playlists()
 			headers, display_rows := get_playlist_display(playlists)
 			print_table(headers, display_rows)
 			return
@@ -120,7 +137,7 @@ func main() {
 		cmd.Parse(os.Args[2:])
 
 		if len(*delete_flag) != 0 {
-			err := delete_playlist(db, *delete_flag)
+			err := queries.Delete_playlist(ctx, *delete_flag)
 			if err != nil {
 				err_fatal(err)
 			}
@@ -128,19 +145,28 @@ func main() {
 			return
 		}
 		if len(*edit_flag) != 0 {
-			// TODO: edit looks for playlist_id
+			playlist_id := *edit_flag
+			err := edit_playlist(playlist_id)
+			if err != nil {
+				err_fatal(err)
+			}
+			return
+		}
+		if len(*create_flag) == 0 {
+			err := fmt.Errorf("no valid flags given for play cmd")
+			err_fatal(err)
 		}
 		query := get_user_input("Enter search terms: ", true)
 		filter := get_user_input("Filter: ", false)
 
-		quota, err := read_quota(db)
+		quota, err := read_quota()
 		if err != nil {
 			err_fatal(err)
 		}
 		units := quota.quota
-		defer update_quota(db, &units)
+		defer update_quota(&units)
 
-		check_token(db)
+		check_token()
 		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		config, err := read_config_file()
 		if err != nil {
@@ -149,10 +175,13 @@ func main() {
 		q := csv_string(query)
 		f := csv_string(filter)
 
-		playlist_resp := create_playlist(db, *create_flag, api_key, access_token, &units)
-		videos, c := populate_playlist(db, query, filter, playlist_resp.Id, &units, config.max_items)
-		add_playlist_row(db, playlist_resp.Id, playlist_resp.Snippet.Title, q, f, c, config.format, config.category)
-		add_vid_rows(db, videos)
+		resp := create_playlist(*create_flag, api_key, access_token, &units)
+		videos, c := populate_playlist(query, filter, resp.Id, &units, config.max_items)
+
+		params := scout_db.Add_playlist_row_params{PlaylistID: resp.Id, Name: resp.Snippet.Title, Q: q, Filter: f, Items: int64(c), Category: config.category, Format: config.format}
+		queries.Add_playlist_row(ctx, params)
+
+		add_vid_rows(videos)
 
 	case "config":
 		config, err := read_config_file()
@@ -174,32 +203,22 @@ func main() {
 		}
 		success_msg("updated config file")
 
-	case "table":
-		err := createTable(db, "./sql/create_playlist_table.sql")
-		if err != nil {
-			err_fatal(err)
-		}
-		success_msg("created table")
-	case "items":
-		items, err := read_playlist_items(db)
-		if err != nil {
-			err_fatal(err)
-		}
-		headers, display_rows := get_items_display(items)
-		print_table(headers, display_rows)
-
 	case "reset":
-		clear_vid_records(db)
+		clear_vid_records()
 	case "drop":
-		drop_config_table(db)
+		drop_config_table()
 	case "insert":
-		init_quota_row(db)
+		err := init_quota_row()
+		if err != nil {
+			err_fatal(err)
+		}
+		success_msg("quota table initialized")
 
 	case "refresh":
-		refresh_token(db)
+		refresh_token()
 
 	case "quota":
-		quota, err := read_quota(db)
+		quota, err := read_quota()
 		if err != nil {
 			err_fatal(err)
 		}

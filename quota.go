@@ -1,9 +1,5 @@
 package main
 
-import (
-	"database/sql"
-)
-
 func init_quota_map() map[string]int {
 	quota_map := map[string]int{
 		"get":    1,
@@ -13,7 +9,7 @@ func init_quota_map() map[string]int {
 	return quota_map
 }
 
-func read_quota(db *sql.DB) (Quota, error) {
+func read_quota() (Quota, error) {
 	var quota Quota
 	query := "SELECT * FROM quota"
 	rows, err := db.Query(query)
@@ -30,24 +26,22 @@ func read_quota(db *sql.DB) (Quota, error) {
 	return quota, nil
 }
 
-func update_quota(db *sql.DB, units *int) {
-	query := readSQLFile("./sql/update_quota.sql")
-	_, err := db.Exec(query, *units)
+func update_quota(units *int) {
+	err := queries.Update_quota(ctx, int64(*units))
 	if err != nil {
 		err_fatal(err)
 	}
 }
 
-func init_quota_row(db *sql.DB) {
-	query := readSQLFile("./sql/init_quota.sql")
-	_, err := db.Exec(query)
+func init_quota_row() error {
+	err := queries.Init_quota_row(ctx)
 	if err != nil {
-		err_fatal(err)
+		return err
 	}
-	success_msg("quota table initialized")
+	return nil
 }
 
-func drop_quota_table(db *sql.DB) {
+func drop_quota_table() {
 	query := "DROP TABLE quota"
 	_, err := db.Exec(query)
 	if err != nil {

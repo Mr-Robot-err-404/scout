@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -14,7 +13,7 @@ type Config struct {
 	max_items int
 }
 
-func init_config_table(db *sql.DB) {
+func init_config_table() {
 	query := readSQLFile("./sql/config_table.sql")
 	_, err := db.Exec(query)
 	if err != nil {
@@ -25,7 +24,7 @@ func init_config_table(db *sql.DB) {
 		category:  "chess",
 		max_items: 5,
 	}
-	err = insert_config_row(db, config)
+	err = insert_config_row(config)
 	if err != nil {
 		err_fatal(err)
 	}
@@ -72,7 +71,7 @@ func get_config_map() (map[string]string, error) {
 	return env_map, nil
 }
 
-func insert_config_row(db *sql.DB, config Config) error {
+func insert_config_row(config Config) error {
 	query := readSQLFile("./sql/config_row.sql")
 	_, err := db.Exec(query, config.format, config.category, config.max_items)
 	if err != nil {
@@ -107,7 +106,7 @@ func read_config_file() (Config, error) {
 	return config, nil
 }
 
-func read_config(db *sql.DB) (Config, error) {
+func read_config() (Config, error) {
 	config := Config{}
 	query := "SELECT * FROM config"
 	rows, err := db.Query(query)
@@ -126,7 +125,7 @@ func read_config(db *sql.DB) (Config, error) {
 
 }
 
-func drop_config_table(db *sql.DB) {
+func drop_config_table() {
 	query := "DROP TABLE config"
 	_, err := db.Exec(query)
 	if err != nil {

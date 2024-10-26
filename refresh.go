@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,7 +22,7 @@ type OAuth struct {
 	Access_token string
 }
 
-func refresh_token(db *sql.DB) error {
+func refresh_token() error {
 	refresh_token := os.Getenv("REFRESH_TOKEN")
 	client_id, client_secret := os.Getenv("CLIENT_ID"), os.Getenv("CLIENT_SECRET")
 
@@ -55,13 +54,7 @@ func refresh_token(db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	err = os.Setenv("ACCESS_TOKEN", s.Access_token)
-
-	if err != nil {
-		return err
-	}
-	query := readSQLFile("./sql/refresh.sql")
-	_, err = db.Exec(query)
+	err = queries.Update_last_refresh(ctx)
 	if err != nil {
 		return err
 	}
@@ -92,21 +85,21 @@ func get_env_map() (map[string]string, error) {
 	return env_map, nil
 }
 
-func check_token(db *sql.DB) {
-	quota, err := read_quota(db)
+func check_token() {
+	quota, err := read_quota()
 	if err != nil {
 		err_fatal(err)
 	}
 	ts := quota.last_refresh
 	diff := time.Now().Unix() - ts.Unix()
 
-	if diff < 5 {
+	if diff < 3000 {
 		return
 	}
 	log := "refresh access token"
 	load(log)
 
-	err = refresh_token(db)
+	err = refresh_token()
 	if err != nil {
 		err_msg(log)
 		err_fatal(err)

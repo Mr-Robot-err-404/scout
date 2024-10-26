@@ -1,7 +1,5 @@
 package main
 
-import "database/sql"
-
 type Channel struct {
 	channel_id string
 	tag        string
@@ -9,9 +7,9 @@ type Channel struct {
 	category   string
 }
 
-func read_channels(db *sql.DB) []Channel {
+func read_channels() []Channel {
 	channels := []Channel{}
-	query := readSQLFile("./sql/read_all_channels.sql")
+	query := "SELECT * FROM channel;"
 	rows, err := db.Query(query)
 	if err != nil {
 		err_fatal(err)
@@ -28,7 +26,7 @@ func read_channels(db *sql.DB) []Channel {
 	return channels
 }
 
-func drop_channel_table(db *sql.DB) {
+func drop_channel_table() {
 	query := "DROP TABLE channel"
 	_, err := db.Exec(query)
 	if err != nil {

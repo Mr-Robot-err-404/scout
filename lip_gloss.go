@@ -4,22 +4,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/list"
 	"github.com/charmbracelet/lipgloss/table"
 )
-
-func DuckDuckGooseEnumerator(l list.Items, i int) string {
-	if l.At(i).Value() == "Goose" {
-		return "Honk →"
-	}
-	return ""
-}
-
-func juicy_print() {
-	l := list.New("Duck", "Duck", "Duck", "Duck", "Goose", "Duck", "Duck")
-	l = l.Enumerator(DuckDuckGooseEnumerator)
-	fmt.Println(l)
-}
 
 func print_table(headers []string, rows [][]string) {
 	if len(rows) == 0 {

@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/chzyer/readline"
 )
 
 func get_user_input(msg string, required bool) []string {
@@ -20,10 +22,20 @@ func get_user_input(msg string, required bool) []string {
 		err := fmt.Errorf("that field is required good sir")
 		err_fatal(err)
 	}
-	q := []string{}
-
-	for _, s := range strings.Split(str, ",") {
-		q = append(q, strings.TrimSpace(s))
-	}
+	q := parse_input(str)
 	return q
+}
+
+func edit_user_input(msg string, prev string) (string, error) {
+	s := lipgloss.NewStyle().Foreground(lipgloss.Color("102"))
+	input, _ := readline.New(s.Render(msg))
+	defer input.Close()
+
+	input.WriteStdin([]byte(prev))
+
+	str, err := input.Readline()
+	if err != nil {
+		return "", err
+	}
+	return str, nil
 }

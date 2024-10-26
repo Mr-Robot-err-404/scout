@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"strconv"
 )
 
@@ -12,16 +11,7 @@ type PlaylistItem struct {
 	channel_id  string
 }
 
-func insert_item_row(db *sql.DB, video_id string, playlist_id string, channel_id string) error {
-	query := readSQLFile("./sql/create_playlist_item.sql")
-	_, err := db.Exec(query, video_id, playlist_id, channel_id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func read_playlist_items(db *sql.DB) ([]PlaylistItem, error) {
+func read_playlist_items() ([]PlaylistItem, error) {
 	items := []PlaylistItem{}
 	query := "SELECT * FROM playlist_item"
 	rows, err := db.Query(query)
@@ -53,7 +43,7 @@ func get_items_display(items []PlaylistItem) ([]string, [][]string) {
 	return headers, display_rows
 }
 
-func drop_item_table(db *sql.DB) {
+func drop_item_table() {
 	query := "DROP TABLE playlist_item"
 	_, err := db.Exec(query)
 	if err != nil {
@@ -62,7 +52,7 @@ func drop_item_table(db *sql.DB) {
 	success_msg("dropped table")
 }
 
-func clear_item_table(db *sql.DB) {
+func clear_item_table() {
 	query := "DELETE FROM playlist_item"
 	_, err := db.Exec(query)
 	if err != nil {

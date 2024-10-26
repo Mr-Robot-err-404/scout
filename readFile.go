@@ -19,7 +19,7 @@ func readSQLFile(path string) string {
 	return string(data)
 }
 
-func readCredentialsFile(path string) Credentials {
+func read_credentials_file(path string) Credentials {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		err_fatal(err)

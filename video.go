@@ -1,15 +1,17 @@
 package main
 
-import "database/sql"
+import (
+	"scout/scout_db"
+)
 
 type Video struct {
 	video_id string
 	title    string
 }
 
-func read_videos(db *sql.DB) ([]Video, error) {
+func read_videos() ([]Video, error) {
 	videos := []Video{}
-	query := readSQLFile("./sql/read_all_videos.sql")
+	query := "SELECT * FROM video;"
 	rows, err := db.Query(query)
 	if err != nil {
 		return videos, err
@@ -26,19 +28,10 @@ func read_videos(db *sql.DB) ([]Video, error) {
 	return videos, nil
 }
 
-func insert_vid_row(db *sql.DB, video_id string, title string) error {
-	query := readSQLFile("./sql/create_video.sql")
-	_, err := db.Exec(query, video_id, title)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func add_vid_rows(db *sql.DB, videos []Video) {
+func add_vid_rows(videos []Video) {
 	for i := range videos {
 		curr := videos[i]
-		err := insert_vid_row(db, curr.video_id, curr.title)
+		err := queries.Insert_vid_row(ctx, scout_db.Insert_vid_row_params{VideoID: curr.video_id, Title: curr.title})
 		if err != nil {
 			err_resp(err)
 		}
@@ -46,7 +39,7 @@ func add_vid_rows(db *sql.DB, videos []Video) {
 	success_resp()
 }
 
-func drop_vid_table(db *sql.DB) {
+func drop_vid_table() {
 	query := "DROP TABLE video"
 	_, err := db.Exec(query)
 	if err != nil {
@@ -56,7 +49,7 @@ func drop_vid_table(db *sql.DB) {
 
 }
 
-func clear_vid_records(db *sql.DB) {
+func clear_vid_records() {
 	query := "DELETE FROM video"
 	_, err := db.Exec(query)
 	if err != nil {

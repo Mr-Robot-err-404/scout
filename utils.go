@@ -1,26 +1,31 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
-func find_row(db *sql.DB, search_term string, path string) (string, bool) {
-	var tag string
+func find_playlist(search_term string) (string, error, bool) {
+	name, err := queries.Find_playlist_row(ctx, search_term)
+	if err != nil {
+		return "", err, false
+	}
+	return name, nil, true
+}
+
+func find_channel(search_term string) (string, error, bool) {
 	s := search_term[:]
 
 	if string(s[0]) != "@" {
 		s = "@" + s
 	}
-	query := readSQLFile(path)
-	row := db.QueryRow(query, s)
-	err := row.Scan(&tag)
+	tag, err := queries.Find_channel_row(ctx, s)
 	if err != nil {
-		return "", false
+		return "", err, false
 	}
-	return tag, true
+	return tag, nil, true
 }
 
 func csv_string(q []string) string {
@@ -38,6 +43,14 @@ func csv_string(q []string) string {
 
 func parse_query(q string) string {
 	return url.PathEscape(q)
+}
+
+func parse_input(str string) []string {
+	q := []string{}
+	for _, s := range strings.Split(str, ",") {
+		q = append(q, strings.TrimSpace(s))
+	}
+	return q
 }
 
 func convert_and_parse(q []string) string {
@@ -84,7 +97,7 @@ func validate_config_flags(format string, category string, max_items string) (ma
 }
 
 func show_gcloud_tokens(access_token string) {
-	credentials := readCredentialsFile("../.config/gcloud/application_default_credentials.json")
+	credentials := read_credentials_file("../.config/gcloud/application_default_credentials.json")
 	fmt.Println("----------------------------------------------")
 	fmt.Printf("REFRESH_TOKEN %v\n", credentials.Refresh_token)
 	fmt.Println("----------------------------------------------")
