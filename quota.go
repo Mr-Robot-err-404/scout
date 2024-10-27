@@ -1,5 +1,7 @@
 package main
 
+var quota_map = init_quota_map()
+
 func init_quota_map() map[string]int {
 	quota_map := map[string]int{
 		"get":    1,

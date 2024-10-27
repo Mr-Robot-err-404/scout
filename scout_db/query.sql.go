@@ -91,14 +91,35 @@ func (q *Queries) Find_channel_row(ctx context.Context, tag string) (string, err
 	return tag, err
 }
 
-const find_playlist_row = `-- name: Find_playlist_row :one
+const find_playlist_id = `-- name: Find_playlist_id :one
+SELECT playlist_id, name, q, "filter", format, items, category 
+FROM playlist 
+WHERE playlist_id = ?
+`
+
+func (q *Queries) Find_playlist_id(ctx context.Context, playlistID string) (Playlist, error) {
+	row := q.db.QueryRowContext(ctx, find_playlist_id, playlistID)
+	var i Playlist
+	err := row.Scan(
+		&i.PlaylistID,
+		&i.Name,
+		&i.Q,
+		&i.Filter,
+		&i.Format,
+		&i.Items,
+		&i.Category,
+	)
+	return i, err
+}
+
+const find_playlist_name = `-- name: Find_playlist_name :one
 SELECT name 
 FROM playlist 
 WHERE name = ?
 `
 
-func (q *Queries) Find_playlist_row(ctx context.Context, name string) (string, error) {
-	row := q.db.QueryRowContext(ctx, find_playlist_row, name)
+func (q *Queries) Find_playlist_name(ctx context.Context, name string) (string, error) {
+	row := q.db.QueryRowContext(ctx, find_playlist_name, name)
 	err := row.Scan(&name)
 	return name, err
 }
@@ -151,6 +172,31 @@ SET last_refresh = CURRENT_TIMESTAMP
 
 func (q *Queries) Update_last_refresh(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, update_last_refresh)
+	return err
+}
+
+const update_playlist = `-- name: Update_playlist :exec
+UPDATE playlist
+SET q = ?, filter = ?, category = ?, format = ?
+WHERE playlist_id = ?
+`
+
+type Update_playlist_params struct {
+	Q          string
+	Filter     string
+	Category   string
+	Format     string
+	PlaylistID string
+}
+
+func (q *Queries) Update_playlist(ctx context.Context, arg Update_playlist_params) error {
+	_, err := q.db.ExecContext(ctx, update_playlist,
+		arg.Q,
+		arg.Filter,
+		arg.Category,
+		arg.Format,
+		arg.PlaylistID,
+	)
 	return err
 }
 

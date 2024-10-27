@@ -9,9 +9,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var sp = create_spinner()
-var quota_map = init_quota_map()
-
 func main() {
 	if len(os.Args) < 2 || os.Args[1] == "help" {
 		help_txt, err := os.ReadFile("./help.txt")
@@ -39,7 +36,7 @@ func main() {
 	category_flag := config_cmd.String("category", "", "category")
 	max_flag := config_cmd.String("max", "", "max")
 
-	// TODO: refactor using sqlc queries
+	// TODO: edit playlists
 
 	switch os.Args[1] {
 	case "cli":

@@ -8,7 +8,7 @@ import (
 )
 
 func find_playlist(search_term string) (string, error, bool) {
-	name, err := queries.Find_playlist_row(ctx, search_term)
+	name, err := queries.Find_playlist_name(ctx, search_term)
 	if err != nil {
 		return "", err, false
 	}

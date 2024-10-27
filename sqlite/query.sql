@@ -22,10 +22,20 @@ WHERE name = ?;
 DELETE FROM channel 
 WHERE tag = ?;
 
--- name: Find_playlist_row :one
+-- name: Find_playlist_name :one
 SELECT name 
 FROM playlist 
 WHERE name = ?;
+
+-- name: Find_playlist_id :one
+SELECT * 
+FROM playlist 
+WHERE playlist_id = ?;
+
+-- name: Update_playlist :exec
+UPDATE playlist
+SET q = ?, filter = ?, category = ?, format = ?
+WHERE playlist_id = ?;
 
 -- name: Find_channel_row :one
 SELECT tag 

@@ -1,28 +1,119 @@
 package main
 
-func edit_playlist(playlist_id string) error {
-	playlist := Playlist{}
-	query := `SELECT * FROM playlist 
-	WHERE playlist_id = $1`
+import (
+	"fmt"
+	"scout/scout_db"
+	"strings"
+)
 
-	row := db.QueryRow(query, playlist_id)
-	err := row.Scan(&playlist.playlist_id, &playlist.name, &playlist.q, &playlist.filter, &playlist.format, &playlist.items, &playlist.category)
+type PlaylistFields struct {
+	q        []string
+	filter   []string
+	category string
+	format   string
+}
+
+func edit_playlist(playlist_id string) error {
+	playlist, err := queries.Find_playlist_id(ctx, playlist_id)
 	if err != nil {
 		return err
 	}
-	print_title_with_bg("edit " + playlist.name)
-	str, err := edit_user_input("Search query: ", playlist.q)
+	print_title_with_bg("edit " + playlist.Name)
+	next_q, err := edit_user_input("Search query: ", playlist.Q)
 
 	if err != nil {
 		err_fatal(err)
 	}
-	original := parse_input(playlist.q)
-	q := parse_input(str)
+	next_filter, err := edit_user_input("Filter: ", playlist.Filter)
 
-	if is_edited(original, q) {
-		// TODO: write query to update field
+	if err != nil {
+		err_fatal(err)
 	}
+	next_category, err := edit_user_input("Category: ", playlist.Category)
+
+	if err != nil {
+		err_fatal(err)
+	}
+	next_format, err := edit_user_input("Format: ", playlist.Format)
+
+	if err != nil {
+		err_fatal(err)
+	}
+	original := get_playlist_fields(playlist.Q, playlist.Filter, playlist.Category, playlist.Format)
+	next := get_playlist_fields(next_q, next_filter, next_category, next_format)
+
+	if !is_playlist_edited(original, next) {
+		return nil
+	}
+	params, err := get_edited_fields(original, next, playlist_id)
+	if err != nil {
+		return err
+	}
+	err = queries.Update_playlist(ctx, params)
+	if err != nil {
+		return err
+	}
+	success_msg("edited playlist")
 	return nil
+}
+
+func get_edited_fields(original PlaylistFields, next PlaylistFields, playlist_id string) (scout_db.Update_playlist_params, error) {
+	csv_q := csv_string(original.q)
+	csv_filter := csv_string(original.filter)
+	params := scout_db.Update_playlist_params{Q: csv_q, Filter: csv_filter, Category: original.category, PlaylistID: playlist_id}
+
+	if is_edited(original.q, next.q) {
+		csv := csv_string(next.q)
+		params.Q = csv
+	}
+	if is_edited(original.filter, next.filter) {
+		csv := csv_string(next.filter)
+		params.Filter = csv
+	}
+	if original.category != next.category {
+		params.Category = next.category
+	}
+	if original.format != next.format {
+		format := strings.TrimSpace(next.format)
+		if !is_format_valid(format) {
+			err := fmt.Errorf("invalid video format. Accepted values: short || medium || long")
+			return params, err
+		}
+		params.Format = format
+	}
+	return params, nil
+}
+
+func is_playlist_edited(original PlaylistFields, next PlaylistFields) bool {
+	if is_edited(original.q, next.q) {
+		return true
+	}
+	if is_edited(original.filter, next.filter) {
+		return true
+	}
+	if original.category != next.category {
+		return true
+	}
+	if original.format != next.format {
+		return true
+	}
+	return false
+}
+
+func get_playlist_fields(q string, filter string, category string, format string) PlaylistFields {
+	var fields PlaylistFields
+	fields.q = parse_input(q)
+	fields.filter = parse_input(filter)
+	fields.category = category
+	fields.format = format
+	return fields
+}
+
+func is_format_valid(format string) bool {
+	if format == "long" || format == "medium" || format == "short" {
+		return true
+	}
+	return false
 }
 
 func is_edited(original []string, input []string) bool {
