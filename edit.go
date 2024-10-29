@@ -13,12 +13,35 @@ type PlaylistFields struct {
 	format   string
 }
 
-func edit_playlist(playlist_id string) error {
-	playlist, err := queries.Find_playlist_id(ctx, playlist_id)
+func edit_channel(channel_id string) error {
+	channel, err := queries.Find_channel(ctx, channel_id)
 	if err != nil {
 		return err
 	}
-	print_title_with_bg("edit " + playlist.Name)
+	print_title_with_bg("edit channel " + channel.Name)
+	next_category, err := edit_user_input("Category: ", channel.Category)
+
+	if err != nil {
+		return err
+	}
+	next := strings.TrimSpace(next_category)
+	if next != channel.Category {
+		params := scout_db.Update_channel_category_params{Category: next, ChannelID: channel_id}
+		err = queries.Update_channel_category(ctx, params)
+		if err != nil {
+			return err
+		}
+		success_msg("edited channel")
+	}
+	return nil
+}
+
+func edit_playlist(playlist_id string) error {
+	playlist, err := queries.Find_playlist(ctx, playlist_id)
+	if err != nil {
+		return err
+	}
+	print_title_with_bg("edit playlist " + playlist.Name)
 	next_q, err := edit_user_input("Search query: ", playlist.Q)
 
 	if err != nil {

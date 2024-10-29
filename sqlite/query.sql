@@ -27,7 +27,7 @@ SELECT name
 FROM playlist 
 WHERE name = ?;
 
--- name: Find_playlist_id :one
+-- name: Find_playlist :one
 SELECT * 
 FROM playlist 
 WHERE playlist_id = ?;
@@ -37,10 +37,20 @@ UPDATE playlist
 SET q = ?, filter = ?, category = ?, format = ?
 WHERE playlist_id = ?;
 
--- name: Find_channel_row :one
-SELECT tag 
+-- name: Find_channel_tag :one
+SELECT tag
 FROM channel
 WHERE tag = ?;
+
+-- name: Find_channel :one
+SELECT * 
+FROM channel
+WHERE channel_id = ?;
+
+-- name: Update_channel_category :exec
+UPDATE channel
+SET category = ?
+WHERE channel_id = ?;
 
 -- name: Init_quota_row :exec
 INSERT INTO quota (id, quota, quota_reset, last_refresh) 

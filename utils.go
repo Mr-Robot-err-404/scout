@@ -21,7 +21,7 @@ func find_channel(search_term string) (string, error, bool) {
 	if string(s[0]) != "@" {
 		s = "@" + s
 	}
-	tag, err := queries.Find_channel_row(ctx, s)
+	tag, err := queries.Find_channel_tag(ctx, s)
 	if err != nil {
 		return "", err, false
 	}

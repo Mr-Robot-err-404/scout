@@ -79,26 +79,44 @@ func (q *Queries) Delete_playlist(ctx context.Context, name string) error {
 	return err
 }
 
-const find_channel_row = `-- name: Find_channel_row :one
-SELECT tag 
+const find_channel = `-- name: Find_channel :one
+SELECT channel_id, tag, name, category 
+FROM channel
+WHERE channel_id = ?
+`
+
+func (q *Queries) Find_channel(ctx context.Context, channelID string) (Channel, error) {
+	row := q.db.QueryRowContext(ctx, find_channel, channelID)
+	var i Channel
+	err := row.Scan(
+		&i.ChannelID,
+		&i.Tag,
+		&i.Name,
+		&i.Category,
+	)
+	return i, err
+}
+
+const find_channel_tag = `-- name: Find_channel_tag :one
+SELECT tag
 FROM channel
 WHERE tag = ?
 `
 
-func (q *Queries) Find_channel_row(ctx context.Context, tag string) (string, error) {
-	row := q.db.QueryRowContext(ctx, find_channel_row, tag)
+func (q *Queries) Find_channel_tag(ctx context.Context, tag string) (string, error) {
+	row := q.db.QueryRowContext(ctx, find_channel_tag, tag)
 	err := row.Scan(&tag)
 	return tag, err
 }
 
-const find_playlist_id = `-- name: Find_playlist_id :one
+const find_playlist = `-- name: Find_playlist :one
 SELECT playlist_id, name, q, "filter", format, items, category 
 FROM playlist 
 WHERE playlist_id = ?
 `
 
-func (q *Queries) Find_playlist_id(ctx context.Context, playlistID string) (Playlist, error) {
-	row := q.db.QueryRowContext(ctx, find_playlist_id, playlistID)
+func (q *Queries) Find_playlist(ctx context.Context, playlistID string) (Playlist, error) {
+	row := q.db.QueryRowContext(ctx, find_playlist, playlistID)
 	var i Playlist
 	err := row.Scan(
 		&i.PlaylistID,
@@ -162,6 +180,22 @@ type Insert_vid_row_params struct {
 
 func (q *Queries) Insert_vid_row(ctx context.Context, arg Insert_vid_row_params) error {
 	_, err := q.db.ExecContext(ctx, insert_vid_row, arg.VideoID, arg.Title)
+	return err
+}
+
+const update_channel_category = `-- name: Update_channel_category :exec
+UPDATE channel
+SET category = ?
+WHERE channel_id = ?
+`
+
+type Update_channel_category_params struct {
+	Category  string
+	ChannelID string
+}
+
+func (q *Queries) Update_channel_category(ctx context.Context, arg Update_channel_category_params) error {
+	_, err := q.db.ExecContext(ctx, update_channel_category, arg.Category, arg.ChannelID)
 	return err
 }
 

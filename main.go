@@ -36,7 +36,7 @@ func main() {
 	category_flag := config_cmd.String("category", "", "category")
 	max_flag := config_cmd.String("max", "", "max")
 
-	// TODO: edit playlists
+	// TODO: hire a product manager
 
 	switch os.Args[1] {
 	case "cli":
@@ -84,6 +84,14 @@ func main() {
 				err_fatal(err)
 			}
 			success_msg(log)
+			return
+		}
+		if len(*edit_flag) != 0 {
+			channel_id := *edit_flag
+			err := edit_channel(channel_id)
+			if err != nil {
+				err_fatal(err)
+			}
 			return
 		}
 		if len(*create_flag) == 0 {
