@@ -36,10 +36,13 @@ func main() {
 	category_flag := config_cmd.String("category", "", "category")
 	max_flag := config_cmd.String("max", "", "max")
 
-	// TODO: hire a product manager
+	// TODO: push on through
 
 	switch os.Args[1] {
 	case "cli":
+		str := parse_html_str("Chess Opening Traps | Philidor, King&#39;s Indian, London, Caro-Kann | GM Naroditsky&#39;s DYI Speedrun")
+		fmt.Println(str)
+
 	case "setup":
 		err := create_tables()
 		if err != nil {
@@ -52,7 +55,7 @@ func main() {
 		}
 		success_msg("quota row initialized")
 
-	case "vid":
+	case "video", "vid":
 		videos, err := read_videos()
 		if err != nil {
 			err_fatal(err)
@@ -60,7 +63,7 @@ func main() {
 		headers, display_rows := get_video_display(videos)
 		print_table(headers, display_rows)
 
-	case "channel":
+	case "channel", "chan":
 		if len(os.Args) == 2 {
 			channels := read_channels()
 			headers, display_rows := get_channel_display(channels)
@@ -132,7 +135,7 @@ func main() {
 		}
 		success_msg(log)
 
-	case "play":
+	case "playlist", "play":
 		if len(os.Args) == 2 {
 			playlists := read_playlists()
 			headers, display_rows := get_playlist_display(playlists)
@@ -142,11 +145,24 @@ func main() {
 		cmd.Parse(os.Args[2:])
 
 		if len(*delete_flag) != 0 {
-			err := queries.Delete_playlist(ctx, *delete_flag)
+			check_token()
+			api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+			playlist_id := *delete_flag
+
+			log := "delete playlist"
+			load(log)
+
+			err := queries.Delete_playlist(ctx, playlist_id)
 			if err != nil {
+				err_msg(log)
 				err_fatal(err)
 			}
-			success_msg("playlist deleted")
+			err = delete_remote_playlist(playlist_id, api_key, access_token)
+			if err != nil {
+				err_msg(log)
+				err_fatal(err)
+			}
+			success_msg(log)
 			return
 		}
 		if len(*edit_flag) != 0 {
@@ -172,7 +188,6 @@ func main() {
 		defer update_quota(&units)
 
 		check_token()
-		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		config, err := read_config_file()
 		if err != nil {
 			err_fatal(err)
@@ -180,8 +195,13 @@ func main() {
 		q := csv_string(query)
 		f := csv_string(filter)
 
+		items, err := select_playlist_items(query, filter, &units, config.max_items, config.format, config.category)
+		if err != nil {
+			err_fatal(err)
+		}
+		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		resp := create_playlist(*create_flag, api_key, access_token, &units)
-		videos, c := populate_playlist(query, filter, resp.Id, &units, config.max_items)
+		videos, c := populate_playlist(resp.Id, &units, items)
 
 		params := scout_db.Add_playlist_row_params{PlaylistID: resp.Id, Name: resp.Snippet.Title, Q: q, Filter: f, Items: int64(c), Category: config.category, Format: config.format}
 		queries.Add_playlist_row(ctx, params)

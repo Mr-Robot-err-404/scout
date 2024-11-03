@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
+	"html"
 	"net/url"
 	"strconv"
 	"strings"
 )
 
-func find_playlist(search_term string) (string, error, bool) {
-	name, err := queries.Find_playlist_name(ctx, search_term)
-	if err != nil {
-		return "", err, false
-	}
-	return name, nil, true
+func parse_html_str(s string) string {
+	return html.UnescapeString(s)
 }
 
 func find_channel(search_term string) (string, error, bool) {
@@ -91,7 +88,7 @@ func validate_config_flags(format string, category string, max_items string) (ma
 			err := fmt.Errorf("invalid config option: 'max'. Accepted values: 0 -> 100")
 			return config_options, err
 		}
-		config_options["max_items"] = max_items
+		config_options["max"] = max_items
 	}
 	return config_options, nil
 }

@@ -7,13 +7,13 @@ import (
 	"strings"
 )
 
-func rank_channels(lists [][]SearchItem, q []string, visited_vids []Video, max_items int) []SearchItem {
+func rank_channels(lists [][]SearchItem, filter []string, visited_vids []Video, max_items int) []SearchItem {
 	filtered_lists := [][]SearchItem{}
 	vid_map := get_vid_map(visited_vids)
 
 	for i := range lists {
 		items := lists[i]
-		filter_list(&items, q, vid_map)
+		filter_list(&items, filter, vid_map)
 		filtered_lists = append(filtered_lists, items)
 	}
 	max := max_len(filtered_lists)
@@ -39,24 +39,27 @@ func fill_playlist(lists [][]SearchItem, max int, capacity int) []SearchItem {
 	return playlist_items
 }
 
-func filter_list(videos *[]SearchItem, q []string, visited map[string]string) {
+func filter_list(videos *[]SearchItem, filter []string, visited map[string]string) {
 	items := *videos
 	video_items := []SearchItem{}
 
 	for i := range items {
 		curr := items[i]
+		curr.Snippet.Title = parse_html_str(curr.Snippet.Title)
+		curr.Snippet.Description = parse_html_str(curr.Snippet.Description)
+
 		title, desc := curr.Snippet.Title, curr.Snippet.Description
 		video_id := curr.Id.VideoId
 		valid := 0
 
-		if len(title) == 0 || len(desc) == 0 {
+		if len(title) == 0 {
 			continue
 		}
 		_, exists := visited[video_id]
 		if exists {
 			continue
 		}
-		for _, s := range q {
+		for _, s := range filter {
 			valid += matching_terms(s, strings.ToLower(title), strings.ToLower(desc))
 		}
 		if valid == 0 {

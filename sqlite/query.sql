@@ -16,7 +16,7 @@ VALUES (?, ?);
 
 -- name: Delete_playlist :exec
 DELETE FROM playlist 
-WHERE name = ?;
+WHERE playlist_id = ?;
 
 -- name: Delete_channel_row :exec
 DELETE FROM channel 
@@ -46,6 +46,11 @@ WHERE tag = ?;
 SELECT * 
 FROM channel
 WHERE channel_id = ?;
+
+-- name: Channels_by_category :many
+SELECT *
+FROM channel 
+WHERE category = ?;
 
 -- name: Update_channel_category :exec
 UPDATE channel

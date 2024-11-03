@@ -37,6 +37,40 @@ func (q *Queries) Add_playlist_row(ctx context.Context, arg Add_playlist_row_par
 	return err
 }
 
+const channels_by_category = `-- name: Channels_by_category :many
+SELECT channel_id, tag, name, category
+FROM channel 
+WHERE category = ?
+`
+
+func (q *Queries) Channels_by_category(ctx context.Context, category string) ([]Channel, error) {
+	rows, err := q.db.QueryContext(ctx, channels_by_category, category)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Channel
+	for rows.Next() {
+		var i Channel
+		if err := rows.Scan(
+			&i.ChannelID,
+			&i.Tag,
+			&i.Name,
+			&i.Category,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const create_channel_row = `-- name: Create_channel_row :exec
 INSERT INTO channel (channel_id, tag, name, category) 
 VALUES (?, ?, ?, ?)
@@ -71,11 +105,11 @@ func (q *Queries) Delete_channel_row(ctx context.Context, tag string) error {
 
 const delete_playlist = `-- name: Delete_playlist :exec
 DELETE FROM playlist 
-WHERE name = ?
+WHERE playlist_id = ?
 `
 
-func (q *Queries) Delete_playlist(ctx context.Context, name string) error {
-	_, err := q.db.ExecContext(ctx, delete_playlist, name)
+func (q *Queries) Delete_playlist(ctx context.Context, playlistID string) error {
+	_, err := q.db.ExecContext(ctx, delete_playlist, playlistID)
 	return err
 }
 

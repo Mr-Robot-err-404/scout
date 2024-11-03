@@ -117,11 +117,11 @@ func create_remote_playlist(playlist_name string, key string, access_token strin
 	return item, nil
 }
 
-func search_remote_channel(q string, channel_id string) (SearchResp, error) {
+func search_remote_channel(q string, channel_id string, format string) (SearchResp, error) {
 	var res SearchResp
 	api_key := os.Getenv("API_KEY")
 
-	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&videoDuration=long&channelId=" + channel_id + "&type=video&q=" + q + "&key=" + api_key
+	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&videoDuration=" + format + "&channelId=" + channel_id + "&type=video&q=" + q + "&key=" + api_key
 	resp, err := http.Get(route)
 
 	if err != nil {
@@ -142,6 +142,25 @@ func search_remote_channel(q string, channel_id string) (SearchResp, error) {
 		return res, err
 	}
 	return res, nil
+}
+
+func delete_remote_playlist(playlist_id string, key string, access_token string) error {
+	route := "https://youtube.googleapis.com/youtube/v3/playlists?id=" + playlist_id + "&key=" + key
+	req, err := http.NewRequest(http.MethodDelete, route, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+access_token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 204 {
+		err = fmt.Errorf("failed request with status code: %v", resp.StatusCode)
+	}
+	return err
 }
 
 func insert_playlist_item(playlist_id string, video_id string, key string, access_token string) (PlaylistInsertResp, error) {

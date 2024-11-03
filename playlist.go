@@ -16,10 +16,6 @@ type Playlist struct {
 }
 
 func create_playlist(name string, key string, access_token string, units *int) PlaylistResp {
-	_, _, exists := find_playlist(name)
-	if exists {
-		info_msg_fatal("playlist already exists")
-	}
 	log := "create remote playlist"
 	load(log)
 	item, err := create_remote_playlist(name, key, access_token)
@@ -33,29 +29,7 @@ func create_playlist(name string, key string, access_token string, units *int) P
 	return item
 }
 
-func populate_playlist(q []string, filter []string, playlist_id string, units *int, max_items int) ([]Video, int) {
-	search_items := [][]SearchItem{}
-	query := convert_and_parse(q)
-	channels := read_channels()
-	vids, err := read_videos()
-
-	if err != nil {
-		err_fatal(err)
-	}
-
-	for i := range channels {
-		curr := channels[i]
-		resp, err := search_remote_channel(query, curr.channel_id)
-		if err != nil {
-			err_msg(curr.name)
-			continue
-		}
-		success_msg(curr.name)
-		search_items = append(search_items, resp.Items)
-		*units -= quota_map["search"]
-	}
-	playlist_items := rank_channels(search_items, filter, vids, max_items)
-
+func populate_playlist(playlist_id string, units *int, playlist_items []SearchItem) ([]Video, int) {
 	if len(playlist_items) == 0 {
 		info_msg_fatal("no matching search results")
 	}
@@ -78,10 +52,41 @@ func populate_playlist(q []string, filter []string, playlist_id string, units *i
 		c++
 		*units -= quota_map["insert"]
 	}
-	msg := fmt.Sprintf("added %v items to playlist\n", c)
+	msg := fmt.Sprintf("added %v items to playlist", c)
 	info_msg(msg)
 
 	return videos, c
+}
+
+func select_playlist_items(q []string, filter []string, units *int, max_items int, format string, category string) ([]SearchItem, error) {
+	search_items := [][]SearchItem{}
+	query := convert_and_parse(q)
+	channels, err := queries.Channels_by_category(ctx, category)
+	if err != nil {
+		return []SearchItem{}, err
+	}
+	vids, err := read_videos()
+	if err != nil {
+		return []SearchItem{}, err
+	}
+	if len(channels) == 0 {
+		msg := fmt.Sprintf("no channels tracked for category: %v", category)
+		info_msg_fatal(msg)
+	}
+
+	for i := range channels {
+		curr := channels[i]
+		resp, err := search_remote_channel(query, curr.ChannelID, format)
+		if err != nil {
+			err_msg(curr.Name)
+			continue
+		}
+		success_msg(curr.Name)
+		search_items = append(search_items, resp.Items)
+		*units -= quota_map["search"]
+	}
+	playlist_items := rank_channels(search_items, filter, vids, max_items)
+	return playlist_items, nil
 }
 
 func read_playlists() []Playlist {
