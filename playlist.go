@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 )
 
 type Playlist struct {
@@ -29,11 +28,7 @@ func create_playlist(name string, key string, access_token string, units *int) P
 	return item
 }
 
-func populate_playlist(playlist_id string, units *int, playlist_items []SearchItem) ([]Video, int) {
-	if len(playlist_items) == 0 {
-		info_msg_fatal("no matching search results")
-	}
-	api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+func populate_playlist(playlist_id string, units *int, playlist_items []SearchItem, api_key string, access_token string) ([]Video, int) {
 	videos := []Video{}
 
 	c := 0

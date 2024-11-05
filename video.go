@@ -36,7 +36,6 @@ func add_vid_rows(videos []Video) {
 			err_resp(err)
 		}
 	}
-	success_resp()
 }
 
 func drop_vid_table() {

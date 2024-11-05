@@ -103,14 +103,25 @@ func (q *Queries) Delete_channel_row(ctx context.Context, tag string) error {
 	return err
 }
 
-const delete_playlist = `-- name: Delete_playlist :exec
+const delete_playlist = `-- name: Delete_playlist :one
 DELETE FROM playlist 
 WHERE playlist_id = ?
+RETURNING playlist_id, name, q, "filter", format, items, category
 `
 
-func (q *Queries) Delete_playlist(ctx context.Context, playlistID string) error {
-	_, err := q.db.ExecContext(ctx, delete_playlist, playlistID)
-	return err
+func (q *Queries) Delete_playlist(ctx context.Context, playlistID string) (Playlist, error) {
+	row := q.db.QueryRowContext(ctx, delete_playlist, playlistID)
+	var i Playlist
+	err := row.Scan(
+		&i.PlaylistID,
+		&i.Name,
+		&i.Q,
+		&i.Filter,
+		&i.Format,
+		&i.Items,
+		&i.Category,
+	)
+	return i, err
 }
 
 const find_channel = `-- name: Find_channel :one
@@ -265,6 +276,22 @@ func (q *Queries) Update_playlist(ctx context.Context, arg Update_playlist_param
 		arg.Format,
 		arg.PlaylistID,
 	)
+	return err
+}
+
+const update_playlist_item_count = `-- name: Update_playlist_item_count :exec
+UPDATE playlist
+SET items = ?
+WHERE playlist_id = ?
+`
+
+type Update_playlist_item_count_params struct {
+	Items      int64
+	PlaylistID string
+}
+
+func (q *Queries) Update_playlist_item_count(ctx context.Context, arg Update_playlist_item_count_params) error {
+	_, err := q.db.ExecContext(ctx, update_playlist_item_count, arg.Items, arg.PlaylistID)
 	return err
 }
 

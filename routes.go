@@ -76,6 +76,9 @@ type PageInfo struct {
 	TotalResults   int
 	ResultsPerPage int
 }
+type AllPlaylistsResp struct {
+	Items []struct{ Id string }
+}
 
 func create_remote_playlist(playlist_name string, key string, access_token string) (PlaylistResp, error) {
 	var item PlaylistResp
@@ -161,6 +164,41 @@ func delete_remote_playlist(playlist_id string, key string, access_token string)
 		err = fmt.Errorf("failed request with status code: %v", resp.StatusCode)
 	}
 	return err
+}
+
+func list_remote_playlist_items(access_token string, units *int, route string) ([]string, error) {
+	remote_IDs := []string{}
+	req, err := http.NewRequest(http.MethodGet, route, nil)
+	if err != nil {
+		return remote_IDs, err
+	}
+	req.Header.Set("Authorization", "Bearer "+access_token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return remote_IDs, err
+	}
+	if resp.StatusCode != 200 {
+		return remote_IDs, fmt.Errorf("failed request with status code: %v", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	*units--
+
+	if err != nil {
+		return remote_IDs, err
+	}
+	var playlists AllPlaylistsResp
+	err = json.Unmarshal(body, &playlists)
+
+	if err != nil {
+		return remote_IDs, err
+	}
+	for _, curr := range playlists.Items {
+		remote_IDs = append(remote_IDs, curr.Id)
+	}
+	return remote_IDs, nil
 }
 
 func insert_playlist_item(playlist_id string, video_id string, key string, access_token string) (PlaylistInsertResp, error) {

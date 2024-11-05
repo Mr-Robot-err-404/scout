@@ -36,7 +36,10 @@ func main() {
 	category_flag := config_cmd.String("category", "", "category")
 	max_flag := config_cmd.String("max", "", "max")
 
-	// TODO: push on through
+	// TODO:
+	// compare states: exists, items.
+	// if !exists: remove local playlist
+	// if items != config.items, add to queue
 
 	switch os.Args[1] {
 	case "cli":
@@ -54,6 +57,23 @@ func main() {
 			err_fatal(err)
 		}
 		success_msg("quota row initialized")
+	case "cron":
+		check_token()
+		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+		quota, err := read_quota()
+		if err != nil {
+			err_fatal(err)
+		}
+		units := quota.quota
+		defer update_quota(&units)
+
+		updated, err := cron_job(api_key, access_token, &units)
+		if err != nil {
+			err_fatal(err)
+		}
+		update_vids(updated)
+		update_items(updated)
+		success_resp()
 
 	case "video", "vid":
 		videos, err := read_videos()
@@ -145,18 +165,21 @@ func main() {
 		cmd.Parse(os.Args[2:])
 
 		if len(*delete_flag) != 0 {
-			check_token()
-			api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 			playlist_id := *delete_flag
 
-			log := "delete playlist"
-			load(log)
-
-			err := queries.Delete_playlist(ctx, playlist_id)
+			_, err := queries.Delete_playlist(ctx, playlist_id)
 			if err != nil {
-				err_msg(log)
+				if err.Error() == "sql: no rows in result set" {
+					err_msg("no playlists match that ID")
+					return
+				}
 				err_fatal(err)
 			}
+			log := "delete playlist"
+			load(log)
+			check_token()
+
+			api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 			err = delete_remote_playlist(playlist_id, api_key, access_token)
 			if err != nil {
 				err_msg(log)
@@ -199,9 +222,12 @@ func main() {
 		if err != nil {
 			err_fatal(err)
 		}
+		if len(items) == 0 {
+			info_msg_fatal("no matching items found")
+		}
 		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		resp := create_playlist(*create_flag, api_key, access_token, &units)
-		videos, c := populate_playlist(resp.Id, &units, items)
+		videos, c := populate_playlist(resp.Id, &units, items, api_key, access_token)
 
 		params := scout_db.Add_playlist_row_params{PlaylistID: resp.Id, Name: resp.Snippet.Title, Q: q, Filter: f, Items: int64(c), Category: config.category, Format: config.format}
 		queries.Add_playlist_row(ctx, params)
@@ -240,7 +266,11 @@ func main() {
 		success_msg("quota table initialized")
 
 	case "refresh":
-		refresh_token()
+		err := refresh_token()
+		if err != nil {
+			err_fatal(err)
+		}
+		success_msg("refresh token")
 
 	case "quota":
 		quota, err := read_quota()

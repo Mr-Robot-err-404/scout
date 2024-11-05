@@ -14,9 +14,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?);
 INSERT INTO video (video_id, title) 
 VALUES (?, ?);
 
--- name: Delete_playlist :exec
+-- name: Delete_playlist :one
 DELETE FROM playlist 
-WHERE playlist_id = ?;
+WHERE playlist_id = ?
+RETURNING *;
 
 -- name: Delete_channel_row :exec
 DELETE FROM channel 
@@ -35,6 +36,11 @@ WHERE playlist_id = ?;
 -- name: Update_playlist :exec
 UPDATE playlist
 SET q = ?, filter = ?, category = ?, format = ?
+WHERE playlist_id = ?;
+
+-- name: Update_playlist_item_count :exec
+UPDATE playlist
+SET items = ?
 WHERE playlist_id = ?;
 
 -- name: Find_channel_tag :one
