@@ -35,11 +35,8 @@ func main() {
 	format_flag := config_cmd.String("format", "", "format")
 	category_flag := config_cmd.String("category", "", "category")
 	max_flag := config_cmd.String("max", "", "max")
-
-	// TODO:
-	// compare states: exists, items.
-	// if !exists: remove local playlist
-	// if items != config.items, add to queue
+	track_flag := config_cmd.String("track", "", "track")
+	default_flag := config_cmd.Bool("default", false, "default")
 
 	switch os.Args[1] {
 	case "cli":
@@ -64,14 +61,20 @@ func main() {
 		if err != nil {
 			err_fatal(err)
 		}
-		units := quota.quota
-		defer update_quota(&units)
-
-		updated, err := cron_job(api_key, access_token, &units)
+		config, err := read_config_file()
 		if err != nil {
 			err_fatal(err)
 		}
-		update_vids(updated)
+		units := quota.quota
+		defer update_quota(&units)
+
+		updated, err := cron_job(api_key, access_token, &units, config)
+		if err != nil {
+			err_fatal(err)
+		}
+		if config.track == "on" {
+			update_vids(updated)
+		}
 		update_items(updated)
 		success_resp()
 
@@ -232,7 +235,9 @@ func main() {
 		params := scout_db.Add_playlist_row_params{PlaylistID: resp.Id, Name: resp.Snippet.Title, Q: q, Filter: f, Items: int64(c), Category: config.category, Format: config.format}
 		queries.Add_playlist_row(ctx, params)
 
-		add_vid_rows(videos)
+		if config.track == "on" {
+			add_vid_rows(videos)
+		}
 
 	case "config":
 		config, err := read_config_file()
@@ -244,7 +249,16 @@ func main() {
 			return
 		}
 		config_cmd.Parse(os.Args[2:])
-		config_options, err := validate_config_flags(*format_flag, *category_flag, *max_flag)
+
+		if *default_flag {
+			err := set_default_config()
+			if err != nil {
+				err_fatal(err)
+			}
+			success_msg("default config set")
+			return
+		}
+		config_options, err := validate_config_flags(*format_flag, *category_flag, *max_flag, *track_flag)
 		if err != nil {
 			err_fatal(err)
 		}

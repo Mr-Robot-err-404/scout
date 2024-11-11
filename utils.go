@@ -66,7 +66,7 @@ func convert_and_parse(q []string) string {
 	return parse_query(query)
 }
 
-func validate_config_flags(format string, category string, max_items string) (map[string]string, error) {
+func validate_config_flags(format string, category string, max_items string, track string) (map[string]string, error) {
 	config_options := make(map[string]string)
 	if len(format) > 0 {
 		if format == "short" || format == "medium" || format == "long" {
@@ -84,11 +84,18 @@ func validate_config_flags(format string, category string, max_items string) (ma
 		if err != nil {
 			return config_options, err
 		}
-		if num < 0 || num > 100 {
-			err := fmt.Errorf("invalid config option: 'max'. Accepted values: 0 -> 100")
+		if num < 0 || num > 50 {
+			err := fmt.Errorf("invalid config option: 'max'. Accepted values: 0 -> 50")
 			return config_options, err
 		}
 		config_options["max"] = max_items
+	}
+	if len(track) > 0 {
+		if track != "on" && track != "off" {
+			err := fmt.Errorf("invalid config option: 'track'. Accepted values: on || off")
+			return config_options, err
+		}
+		config_options["track"] = track
 	}
 	return config_options, nil
 }

@@ -11,6 +11,7 @@ type Config struct {
 	format    string
 	category  string
 	max_items int
+	track     string
 }
 
 func init_config_table() {
@@ -71,6 +72,20 @@ func get_config_map() (map[string]string, error) {
 	return env_map, nil
 }
 
+func set_default_config() error {
+	var default_map = map[string]string{
+		"format":   "medium",
+		"category": "chess",
+		"max":      "10",
+		"track":    "on",
+	}
+	err := godotenv.Write(default_map, "./.config")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func insert_config_row(config Config) error {
 	query := readSQLFile("./sql/config_row.sql")
 	_, err := db.Exec(query, config.format, config.category, config.max_items)
@@ -84,10 +99,12 @@ func print_config(config Config) {
 	format_msg := fmt.Sprintf("video format | %v", config.format)
 	category_msg := fmt.Sprintf("category     | %v", config.category)
 	max_msg := fmt.Sprintf("max items    | %v", config.max_items)
+	track_msg := fmt.Sprintf("tracking     | %v", config.track)
 
 	info_msg(format_msg)
 	info_msg(category_msg)
 	info_msg(max_msg)
+	info_msg(track_msg)
 }
 
 func read_config_file() (Config, error) {
@@ -102,6 +119,7 @@ func read_config_file() (Config, error) {
 	}
 	config.format = env["format"]
 	config.category = env["category"]
+	config.track = env["track"]
 	config.max_items = max_items
 	return config, nil
 }

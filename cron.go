@@ -17,7 +17,7 @@ type UpdatedPlaylist struct {
 	playlist_id string
 }
 
-func cron_job(api_key string, access_token string, units *int) ([]UpdatedPlaylist, error) {
+func cron_job(api_key string, access_token string, units *int, config Config) ([]UpdatedPlaylist, error) {
 	updated := []UpdatedPlaylist{}
 	playlists := read_playlists()
 	route := "https://youtube.googleapis.com/youtube/v3/playlists?part=snippet&maxResults=50&mine=true&key=" + api_key
@@ -32,11 +32,6 @@ func cron_job(api_key string, access_token string, units *int) ([]UpdatedPlaylis
 	success_msg(log)
 	active, unused := filter_existing_IDs(playlists, remote_playlists)
 	clear_unused_playlists(unused)
-
-	config, err := read_config_file()
-	if err != nil {
-		return updated, err
-	}
 
 	states := []PlaylistState{}
 	for _, playlist_id := range active {
