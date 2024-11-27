@@ -69,7 +69,7 @@ VALUES (69, 10000, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- name: Update_quota :exec
 UPDATE quota 
-SET quota = ?;
+SET quota = ?, quota_reset = ?;
 
 -- name: Update_last_refresh :exec
 UPDATE quota 

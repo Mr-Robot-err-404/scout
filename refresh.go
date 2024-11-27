@@ -15,14 +15,14 @@ import (
 type Quota struct {
 	id           int
 	quota        int
-	timestamp    time.Time
+	quota_reset  time.Time
 	last_refresh time.Time
 }
 type OAuth struct {
 	Access_token string
 }
 
-func refresh_token() error {
+func refresh_token() (string, error) {
 	refresh_token := os.Getenv("REFRESH_TOKEN")
 	client_id, client_secret := os.Getenv("CLIENT_ID"), os.Getenv("CLIENT_SECRET")
 
@@ -36,30 +36,30 @@ func refresh_token() error {
 	resp, err := http.PostForm(route, data)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode != 200 {
-		err := fmt.Errorf("request denied with status: %v", resp.Status)
-		return err
+		err := fmt.Errorf(resp.Status)
+		return "", err
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 	var s OAuth
 	err = json.Unmarshal(body, &s)
 
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = queries.Update_last_refresh(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 	renew_access_token(s.Access_token)
-	return nil
+	return s.Access_token, nil
 }
 
 func renew_access_token(access_token string) error {
@@ -85,7 +85,7 @@ func get_env_map() (map[string]string, error) {
 	return env_map, nil
 }
 
-func check_token() {
+func check_token() string {
 	quota, err := read_quota()
 	if err != nil {
 		err_fatal(err)
@@ -94,15 +94,16 @@ func check_token() {
 	diff := time.Now().Unix() - ts.Unix()
 
 	if diff < 3000 {
-		return
+		return ""
 	}
 	log := "refresh access token"
 	load(log)
 
-	err = refresh_token()
+	token, err := refresh_token()
 	if err != nil {
 		err_msg(log)
 		err_fatal(err)
 	}
 	success_msg(log)
+	return token
 }

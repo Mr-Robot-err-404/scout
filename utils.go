@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func parse_html_str(s string) string {
@@ -36,6 +37,12 @@ func csv_string(q []string) string {
 		csv_line += "," + str
 	}
 	return csv_line
+}
+
+func extract_pt_time(ts time.Time) time.Time {
+	time_diff := 8 * 3600
+	pt_time := ts.Unix() - int64(time_diff)
+	return time.Unix(pt_time, 0)
 }
 
 func parse_query(q string) string {

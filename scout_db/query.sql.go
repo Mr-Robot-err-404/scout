@@ -7,6 +7,7 @@ package scout_db
 
 import (
 	"context"
+	"time"
 )
 
 const add_playlist_row = `-- name: Add_playlist_row :exec
@@ -297,10 +298,15 @@ func (q *Queries) Update_playlist_item_count(ctx context.Context, arg Update_pla
 
 const update_quota = `-- name: Update_quota :exec
 UPDATE quota 
-SET quota = ?
+SET quota = ?, quota_reset = ?
 `
 
-func (q *Queries) Update_quota(ctx context.Context, quota int64) error {
-	_, err := q.db.ExecContext(ctx, update_quota, quota)
+type Update_quota_params struct {
+	Quota      int64
+	QuotaReset time.Time
+}
+
+func (q *Queries) Update_quota(ctx context.Context, arg Update_quota_params) error {
+	_, err := q.db.ExecContext(ctx, update_quota, arg.Quota, arg.QuotaReset)
 	return err
 }

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 )
 
 type Snippet struct {
@@ -104,7 +105,7 @@ func create_remote_playlist(playlist_name string, key string, access_token strin
 		return item, err
 	}
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("failed request with status: %v", resp.Status)
+		err = fmt.Errorf(resp.Status)
 		return item, err
 	}
 	defer resp.Body.Close()
@@ -120,31 +121,37 @@ func create_remote_playlist(playlist_name string, key string, access_token strin
 	return item, nil
 }
 
-func search_remote_channel(q string, channel_id string, format string) (SearchResp, error) {
-	var res SearchResp
+func search_remote_channel(q string, channel_id string, format string, wg *sync.WaitGroup, ch chan SearchPayload) {
 	api_key := os.Getenv("API_KEY")
+	var res SearchResp
+	defer wg.Done()
 
 	route := "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&videoDuration=" + format + "&channelId=" + channel_id + "&type=video&q=" + q + "&key=" + api_key
 	resp, err := http.Get(route)
 
 	if err != nil {
-		return res, err
+		ch <- SearchPayload{err: err}
+		return
 	}
 	if resp.StatusCode != 200 {
-		return res, fmt.Errorf("request failed with status code %v", resp.StatusCode)
+		ch <- SearchPayload{err: fmt.Errorf(resp.Status)}
+		return
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
-		return res, err
+		ch <- SearchPayload{err: err}
+		return
 	}
 	err = json.Unmarshal(body, &res)
 
 	if err != nil {
-		return res, err
+		ch <- SearchPayload{err: err}
+		return
 	}
-	return res, nil
+	ch <- SearchPayload{resp: res, err: nil}
+	return
 }
 
 func delete_remote_playlist(playlist_id string, key string, access_token string) error {
@@ -161,7 +168,7 @@ func delete_remote_playlist(playlist_id string, key string, access_token string)
 		return err
 	}
 	if resp.StatusCode != 204 {
-		err = fmt.Errorf("failed request with status code: %v", resp.StatusCode)
+		err = fmt.Errorf(resp.Status)
 	}
 	return err
 }
@@ -180,7 +187,7 @@ func list_remote_playlist_items(access_token string, units *int, route string) (
 		return remote_IDs, err
 	}
 	if resp.StatusCode != 200 {
-		return remote_IDs, fmt.Errorf("failed request with status code: %v", resp.StatusCode)
+		return remote_IDs, fmt.Errorf(resp.Status)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
@@ -227,7 +234,7 @@ func insert_playlist_item(playlist_id string, video_id string, key string, acces
 		return PlaylistInsertResp{}, err
 	}
 	if resp.StatusCode != 200 {
-		err = fmt.Errorf("failed request with status: %v", resp.StatusCode)
+		err = fmt.Errorf(resp.Status)
 		return PlaylistInsertResp{}, err
 	}
 	defer resp.Body.Close()
@@ -257,7 +264,7 @@ func get_channel_ID(tag string, key string, units *int) ([]string, error) {
 		return []string{}, err
 	}
 	if resp.StatusCode != 200 {
-		return []string{}, fmt.Errorf("request failed with status %v", resp.Status)
+		return []string{}, fmt.Errorf(resp.Status)
 	}
 	*units -= quota_map["get"]
 	defer resp.Body.Close()

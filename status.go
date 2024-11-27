@@ -42,6 +42,12 @@ func err_msg(msg string) {
 	fmt.Println(s.Render(t) + msg)
 }
 
+func log_err_queue(queue []error) {
+	for _, err := range queue {
+		err_resp(err)
+	}
+}
+
 func err_resp(err error) {
 	e := "ERROR"
 	s := lipgloss.NewStyle().Background(lipgloss.Color("1")).PaddingRight(1).PaddingLeft(1).MarginRight(1)

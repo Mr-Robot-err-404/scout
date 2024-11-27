@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"scout/scout_db"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -30,6 +31,8 @@ func main() {
 	create_flag := cmd.String("add", "", "add")
 	delete_flag := cmd.String("delete", "", "delete")
 	edit_flag := cmd.String("edit", "", "edit")
+	detach_flag := cmd.String("detach", "", "detach")
+	attach_flag := cmd.String("attach", "", "attach")
 
 	config_cmd := flag.NewFlagSet("config_cmd", flag.ExitOnError)
 	format_flag := config_cmd.String("format", "", "format")
@@ -40,8 +43,8 @@ func main() {
 
 	switch os.Args[1] {
 	case "cli":
-		str := parse_html_str("Chess Opening Traps | Philidor, King&#39;s Indian, London, Caro-Kann | GM Naroditsky&#39;s DYI Speedrun")
-		fmt.Println(str)
+		ts := time.Now()
+		fmt.Println(is_quota_reset(extract_pt_time(ts)))
 
 	case "setup":
 		err := create_tables()
@@ -55,8 +58,11 @@ func main() {
 		}
 		success_msg("quota row initialized")
 	case "cron":
-		check_token()
 		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+		token := check_token()
+		if len(token) > 0 {
+			access_token = token
+		}
 		quota, err := read_quota()
 		if err != nil {
 			err_fatal(err)
@@ -66,7 +72,12 @@ func main() {
 			err_fatal(err)
 		}
 		units := quota.quota
-		defer update_quota(&units)
+		ts := quota.quota_reset
+		if is_quota_reset(quota.quota_reset) {
+			units = 10000
+			ts = time.Now()
+		}
+		defer update_quota(&units, ts)
 
 		updated, err := cron_job(api_key, access_token, &units, config)
 		if err != nil {
@@ -140,7 +151,13 @@ func main() {
 			err_fatal(err)
 		}
 		units := quota.quota
-		defer update_quota(&units)
+		ts := quota.quota_reset
+
+		if is_quota_reset(quota.quota_reset) {
+			units = 10000
+			ts = time.Now()
+		}
+		defer update_quota(&units, ts)
 
 		key := os.Getenv("API_KEY")
 		item, err := get_channel_ID(*create_flag, key, &units)
@@ -167,6 +184,28 @@ func main() {
 		}
 		cmd.Parse(os.Args[2:])
 
+		if len(*detach_flag) > 0 {
+			playlist_id := *delete_flag
+			_, err := queries.Delete_playlist(ctx, playlist_id)
+			if err != nil {
+				if err.Error() == "sql: no rows in result set" {
+					info_msg("no playlists match that ID")
+					return
+				}
+				err_fatal(err)
+			}
+			success_msg("detach playlist")
+			return
+		}
+		if len(*attach_flag) > 0 {
+			// TODO: take remote playlist ID
+			// check if id is already tracked
+			// fetch items -> []video_id
+			// compare with, filter & update vid table
+			// create local playlist and update details
+			// no need to populate
+		}
+
 		if len(*delete_flag) != 0 {
 			playlist_id := *delete_flag
 
@@ -180,9 +219,12 @@ func main() {
 			}
 			log := "delete playlist"
 			load(log)
-			check_token()
 
 			api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+			token := check_token()
+			if len(token) > 0 {
+				access_token = token
+			}
 			err = delete_remote_playlist(playlist_id, api_key, access_token)
 			if err != nil {
 				err_msg(log)
@@ -211,9 +253,18 @@ func main() {
 			err_fatal(err)
 		}
 		units := quota.quota
-		defer update_quota(&units)
+		ts := quota.quota_reset
+		if is_quota_reset(quota.quota_reset) {
+			units = 10000
+			ts = time.Now()
+		}
+		defer update_quota(&units, ts)
 
-		check_token()
+		token := check_token()
+		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
+		if len(token) > 0 {
+			access_token = token
+		}
 		config, err := read_config_file()
 		if err != nil {
 			err_fatal(err)
@@ -221,16 +272,30 @@ func main() {
 		q := csv_string(query)
 		f := csv_string(filter)
 
-		items, err := select_playlist_items(query, filter, &units, config.max_items, config.format, config.category)
-		if err != nil {
-			err_fatal(err)
+		log := "scrape channels"
+		load(log)
+		items, err_queue := select_playlist_items(query, filter, &units, config.max_items, config.format, config.category)
+		if len(err_queue) != 0 {
+			err_msg(log)
+			log_err_queue(err_queue)
+			return
 		}
+		success_msg(log)
 		if len(items) == 0 {
 			info_msg_fatal("no matching items found")
 		}
-		api_key, access_token := os.Getenv("API_KEY"), os.Getenv("ACCESS_TOKEN")
 		resp := create_playlist(*create_flag, api_key, access_token, &units)
-		videos, c := populate_playlist(resp.Id, &units, items, api_key, access_token)
+		log = "populate playlist"
+		load(log)
+		videos, c, err_queue := populate_playlist(resp.Id, &units, items, api_key, access_token)
+
+		if len(items) == len(err_queue) {
+			err_msg(log)
+			log_err_queue(err_queue)
+			return
+		}
+		success_msg(log)
+		log_err_queue(err_queue)
 
 		params := scout_db.Add_playlist_row_params{PlaylistID: resp.Id, Name: resp.Snippet.Title, Q: q, Filter: f, Items: int64(c), Category: config.category, Format: config.format}
 		queries.Add_playlist_row(ctx, params)
@@ -280,7 +345,7 @@ func main() {
 		success_msg("quota table initialized")
 
 	case "refresh":
-		err := refresh_token()
+		_, err := refresh_token()
 		if err != nil {
 			err_fatal(err)
 		}
@@ -291,7 +356,13 @@ func main() {
 		if err != nil {
 			err_fatal(err)
 		}
-		msg := fmt.Sprintf("units remaining => %v", quota.quota)
+		units := quota.quota
+
+		if is_quota_reset(quota.quota_reset) {
+			units = 10000
+			defer update_quota(&units, time.Now())
+		}
+		msg := fmt.Sprintf("quota units | %v", units)
 		info_msg(msg)
 	case "token":
 		access_token := os.Getenv("ACCESS_TOKEN")
